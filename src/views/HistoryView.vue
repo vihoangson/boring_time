@@ -4,9 +4,11 @@ import AppHeader from '../components/ui/AppHeader.vue'
 import { clearData, DEFAULT_SETTINGS, exportData, importData } from '../services/storage'
 import { useSessionsStore } from '../stores/sessions'
 import { useSettingsStore } from '../stores/settings'
+import { useUrgesStore } from '../stores/urges'
 
 const sessions = useSessionsStore()
 const settings = useSettingsStore()
+const urges = useUrgesStore()
 const notice = ref('')
 const fileInput = ref(null)
 const startDate = ref('')
@@ -67,7 +69,7 @@ const currentWeekCount = computed(() => {
 })
 
 function exportJson() {
-  const blob = new Blob([JSON.stringify(exportData(settings.$state, sessions.items), null, 2)], { type: 'application/json' })
+  const blob = new Blob([JSON.stringify(exportData(settings.$state, sessions.items, urges.$state), null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -82,6 +84,7 @@ async function importJson(event) {
     const imported = importData(JSON.parse(await file.text()))
     settings.update(imported.settings)
     sessions.replace(imported.sessions)
+    urges.loadResetData(imported.reset)
     notice.value = `Đã nhập ${imported.sessions.length} phiên.`
   } catch (error) {
     notice.value = error instanceof Error ? error.message : 'Không thể nhập tệp này.'
@@ -97,6 +100,7 @@ function clearHistory() {
   }
   settings.$patch({ ...DEFAULT_SETTINGS })
   sessions.items = []
+  urges.clearInMemory()
   notice.value = 'Dữ liệu đã được xóa.'
 }
 </script>

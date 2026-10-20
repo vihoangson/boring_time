@@ -1,12 +1,15 @@
 <script setup>
-import { watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSettingsStore } from './stores/settings'
 import { usePwaUpdates } from './composables/usePwaUpdates'
 import { useReminders } from './composables/useReminders'
+import UrgeQuickCard from './components/urge/UrgeQuickCard.vue'
 
 const settings = useSettingsStore()
 const route = useRoute()
+const quickCardOpen = ref(false)
+const showUrgeShortcut = computed(() => !['session', 'breathing', 'urge-delay', 'landing', 'finish', 'focus'].includes(route.name))
 const { updateAvailable, applyUpdate } = usePwaUpdates()
 const { inAppReminder } = useReminders()
 
@@ -29,6 +32,15 @@ watch(
       <RouterLink to="/">Bắt đầu</RouterLink>
       <button type="button" aria-label="Đóng lời nhắc" @click="inAppReminder = ''">Đóng</button>
     </aside>
+    <UrgeQuickCard v-if="quickCardOpen && showUrgeShortcut" @close="quickCardOpen = false" />
+    <button
+      v-if="showUrgeShortcut"
+      class="urge-floating-button"
+      type="button"
+      aria-label="Tôi đang muốn… Ghi nhận một thôi thúc"
+      :aria-expanded="quickCardOpen"
+      @click="quickCardOpen = !quickCardOpen"
+    >Tôi đang muốn…</button>
     <RouterView />
   </div>
 </template>

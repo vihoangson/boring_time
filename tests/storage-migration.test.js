@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, test } from 'node:test'
-import { DEFAULT_SETTINGS, SCHEMA_VERSION, importData, readData, writeData } from '../src/services/storage.js'
+import { DEFAULT_SETTINGS, SCHEMA_VERSION, exportData, importData, readData, writeData } from '../src/services/storage.js'
 
 const values = new Map()
 globalThis.window = {
@@ -163,4 +163,88 @@ test('stores breathing sessions in the shared history schema', () => {
 
   assert.equal(writeData(data), true)
   assert.deepEqual(readData().sessions[0], breathingSession)
+})
+
+test('migrates v4 data without changing previous settings or session history', () => {
+  const migrated = importData({
+    schemaVersion: 4,
+    settings: { ...DEFAULT_SETTINGS, duration: 20, theme: 'dark' },
+    sessions: [{
+      id: 'v4-1',
+      endedAt: '2026-10-20T12:00:00.000Z',
+      duration: 10,
+      activity: 'dot',
+      sound: 'brown',
+      focusAfter: 4,
+      emotionBefore: null,
+      emotionAfter: null,
+      focusBefore: null,
+      exitAttempts: 0,
+      leaveCount: 0,
+    }],
+  })
+
+  assert.equal(migrated.schemaVersion, SCHEMA_VERSION)
+  assert.equal(migrated.settings.duration, 20)
+  assert.equal(migrated.settings.theme, 'dark')
+  assert.equal(migrated.sessions[0].id, 'v4-1')
+  assert.equal(migrated.reset.habits.length, 7)
+  assert.equal(migrated.reset.delayMinutes, 10)
+})
+
+test('round-trips reset habits, urge records, plans, and alternative activity logs', () => {
+  const reset = {
+    habits: [{ id: 'habit-custom', name: 'Xem tin liên tục', impact: 4, custom: true }],
+    urgeEntries: [{
+      id: 'urge-1',
+      createdAt: '2026-10-20T12:00:00.000Z',
+      habitId: 'habit-custom',
+      habitName: 'Xem tin liên tục',
+      emotion: 'Căng',
+      note: 'Gần hạn chót',
+      delayMinutes: 5,
+      outcome: 'Vẫn muốn nhưng ổn',
+      decision: 'Làm việc khác',
+      exitedEarly: false,
+    }],
+    plans: [{ id: 'plan-1', situation: 'căng thẳng', action: 'đi rót nước', habitId: 'habit-custom', emotion: 'Căng' }],
+    alternatives: [{ id: 'walk', name: 'Đi bộ', minutes: 15, energy: 'low', custom: false }],
+    alternativeEntries: [{ id: 'alt-1', createdAt: '2026-10-20T12:30:00.000Z', activityId: 'walk', activityName: 'Đi bộ', note: 'Không vội' }],
+    delayMinutes: 5,
+    gradualDelay: true,
+  }
+  const data = { schemaVersion: SCHEMA_VERSION, settings: DEFAULT_SETTINGS, sessions: [], reset }
+
+  assert.equal(writeData(data), true)
+  assert.deepEqual(readData().reset, { ...reset, activeDelay: null })
+  assert.deepEqual(importData(exportData(DEFAULT_SETTINGS, [], reset)).reset, { ...reset, activeDelay: null })
+})
+
+test('retains old urge log snapshots if a habit is later removed', () => {
+  const data = {
+    schemaVersion: SCHEMA_VERSION,
+    settings: DEFAULT_SETTINGS,
+    sessions: [],
+    reset: {
+      habits: [],
+      urgeEntries: [{
+        id: 'urge-old',
+        createdAt: '2026-10-20T12:00:00.000Z',
+        habitId: 'removed-habit',
+        habitName: 'Thói quen đã xóa',
+        emotion: 'Mệt',
+        delayMinutes: 10,
+        outcome: null,
+        decision: null,
+        exitedEarly: false,
+      }],
+      alternatives: [],
+      plans: [],
+      alternativeEntries: [],
+      delayMinutes: 10,
+    },
+  }
+
+  assert.equal(writeData(data), true)
+  assert.equal(readData().reset.urgeEntries[0].habitName, 'Thói quen đã xóa')
 })

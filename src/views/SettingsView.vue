@@ -67,13 +67,17 @@ function update(key, value) {
         <h2>Lưu ý khi tập thở</h2>
         <p>Thở nhẹ nhàng, không gắng sức. Nếu thấy chóng mặt, choáng hoặc khó chịu, hãy quay lại thở bình thường. Đây là bài tập thư giãn, không thay thế tư vấn y tế.</p>
       </section>
+      <section class="settings-group reset-support-note">
+        <h2>Giảm kích thích</h2>
+        <p>Boring Time không thể chặn ứng dụng hoặc trang web khác. Nếu cảm giác buồn chán, mất hứng thú hoặc lo âu kéo dài và nặng, trò chuyện với người thân hoặc chuyên gia cũng là một lựa chọn tốt.</p>
+      </section>
       <section class="settings-group shortcut-help">
         <h2>Phím tắt</h2>
         <p><kbd>Space</kbd> bắt đầu ở màn hình chính hoặc tạm dừng/tiếp tục trong phiên.</p>
         <p><kbd>Esc</kbd> giữ 3 giây để kết thúc phiên.</p>
         <p><kbd>1</kbd>–<kbd>5</kbd> chọn điểm tập trung ở màn hình đánh giá.</p>
       </section>
-      <p class="settings-note">Cài đặt và lịch sử được lưu trong trình duyệt này. Tắt lưu lịch sử sẽ chỉ ngăn các phiên mới được ghi lại.</p>
+      <p class="settings-note">Cài đặt và nhật ký được lưu trong trình duyệt này. Tắt lưu lịch sử sẽ ngăn ghi các phiên, thôi thúc và hoạt động mới.</p>
     </section>
   </main>
 </template>

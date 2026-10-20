@@ -1,5 +1,7 @@
+import { DEFAULT_ALTERNATIVES, DEFAULT_HABITS, DEFAULT_RESET_DATA } from '../data/urgeDefaults.js'
+
 const STORAGE_KEY = 'boring-time-data'
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 export const EMOTIONS = ['căng thẳng', 'bồn chồn', 'bình thản', 'mệt', 'tràn năng lượng', 'trống rỗng']
 
@@ -21,6 +23,9 @@ export const DEFAULT_SETTINGS = {
 
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
 const SOUND_TYPES = ['brown', 'white', 'rain', 'tick']
+const URGE_EMOTIONS = ['Chán', 'Căng', 'Mệt', 'Trốn việc', 'Cô đơn', 'Tò mò', 'Khác']
+const URGE_OUTCOMES = ['Cơn muốn đã giảm', 'Vẫn muốn nhưng ổn', 'Vẫn muốn mạnh']
+const URGE_DECISIONS = ['Làm việc khác', 'Vẫn làm', 'Chưa biết']
 const validScore = (score) => score === null || (Number.isInteger(score) && score >= 1 && score <= 5)
 const validEmotion = (emotion) => emotion === null || EMOTIONS.includes(emotion)
 const validLegacySession = (item) =>
@@ -132,6 +137,96 @@ function normalizeSettings(value) {
   }
 }
 
+function normalizeResetData(value) {
+  if (!isRecord(value)) return structuredClone(DEFAULT_RESET_DATA)
+  const habits = Array.isArray(value.habits)
+    ? value.habits.filter((item) => isRecord(item) && typeof item.id === 'string' && typeof item.name === 'string' && item.name.trim() && Number.isInteger(item.impact) && item.impact >= 1 && item.impact <= 5)
+      .slice(0, 100).map((item) => ({ id: item.id, name: item.name.trim().slice(0, 80), impact: item.impact, custom: item.custom === true }))
+    : structuredClone(DEFAULT_HABITS)
+  const alternatives = Array.isArray(value.alternatives)
+    ? value.alternatives.filter((item) => isRecord(item) && typeof item.id === 'string' && typeof item.name === 'string' && item.name.trim() && [5, 15, 30].includes(item.minutes) && ['low', 'medium'].includes(item.energy))
+      .slice(0, 100).map((item) => ({ id: item.id, name: item.name.trim().slice(0, 80), minutes: item.minutes, energy: item.energy, custom: item.custom === true }))
+    : structuredClone(DEFAULT_ALTERNATIVES)
+  const habitIds = new Set(habits.map((item) => item.id))
+  const entryIds = new Set()
+  const urgeEntries = Array.isArray(value.urgeEntries)
+    ? value.urgeEntries.filter((item) => {
+        if (!isRecord(item) || typeof item.id !== 'string' || entryIds.has(item.id) || typeof item.createdAt !== 'string' ||
+          typeof item.habitId !== 'string' || !URGE_EMOTIONS.includes(item.emotion) ||
+          (item.outcome !== null && item.outcome !== undefined && !URGE_OUTCOMES.includes(item.outcome)) ||
+          (item.decision !== null && item.decision !== undefined && !URGE_DECISIONS.includes(item.decision)) ||
+          (item.note !== undefined && typeof item.note !== 'string') ||
+          (item.exitedEarly !== undefined && typeof item.exitedEarly !== 'boolean')) return false
+        entryIds.add(item.id)
+        return true
+      }).slice(-5000).map((item) => ({
+        id: item.id,
+        createdAt: item.createdAt,
+        habitId: item.habitId,
+        habitName: typeof item.habitName === 'string' ? item.habitName.slice(0, 80) : item.habitId,
+        emotion: item.emotion,
+        note: typeof item.note === 'string' ? item.note.slice(0, 500) : '',
+        delayMinutes: [5, 10, 20].includes(item.delayMinutes) ? item.delayMinutes : 10,
+        outcome: URGE_OUTCOMES.includes(item.outcome) ? item.outcome : null,
+        decision: URGE_DECISIONS.includes(item.decision) ? item.decision : null,
+        exitedEarly: item.exitedEarly === true,
+      }))
+    : []
+  const plans = Array.isArray(value.plans)
+    ? value.plans.filter((item) => isRecord(item) && typeof item.id === 'string' && typeof item.situation === 'string' &&
+      item.situation.trim() && typeof item.action === 'string' && item.action.trim() &&
+      (item.habitId === null || item.habitId === undefined || habitIds.has(item.habitId)) &&
+      (item.emotion === null || item.emotion === undefined || URGE_EMOTIONS.includes(item.emotion)))
+      .slice(0, 5).map((item) => ({
+        id: item.id,
+        situation: item.situation.trim().slice(0, 120),
+        action: item.action.trim().slice(0, 160),
+        habitId: habitIds.has(item.habitId) ? item.habitId : null,
+        emotion: URGE_EMOTIONS.includes(item.emotion) ? item.emotion : null,
+      }))
+    : []
+  const alternativeEntries = Array.isArray(value.alternativeEntries)
+    ? value.alternativeEntries.filter((item) => isRecord(item) && typeof item.id === 'string' &&
+      typeof item.createdAt === 'string' && typeof item.activityId === 'string' &&
+      (item.note === undefined || typeof item.note === 'string'))
+      .slice(-5000).map((item) => ({
+        id: item.id,
+        createdAt: item.createdAt,
+        activityId: item.activityId,
+        activityName: typeof item.activityName === 'string' ? item.activityName.slice(0, 80) : item.activityId,
+        note: typeof item.note === 'string' ? item.note.slice(0, 500) : '',
+      }))
+    : []
+
+  return {
+    habits,
+    urgeEntries,
+    plans,
+    alternatives,
+    alternativeEntries,
+    delayMinutes: [5, 10, 20].includes(value.delayMinutes) ? value.delayMinutes : 10,
+    gradualDelay: typeof value.gradualDelay === 'boolean' ? value.gradualDelay : false,
+    activeDelay: isRecord(value.activeDelay) &&
+      typeof value.activeDelay.id === 'string' &&
+      typeof value.activeDelay.createdAt === 'string' &&
+      typeof value.activeDelay.deadline === 'number' && Number.isFinite(value.activeDelay.deadline) &&
+      typeof value.activeDelay.habitId === 'string' &&
+      typeof value.activeDelay.habitName === 'string' &&
+      URGE_EMOTIONS.includes(value.activeDelay.emotion)
+      ? {
+          id: value.activeDelay.id,
+          createdAt: value.activeDelay.createdAt,
+          deadline: value.activeDelay.deadline,
+          habitId: value.activeDelay.habitId,
+          habitName: value.activeDelay.habitName,
+          emotion: value.activeDelay.emotion,
+          note: typeof value.activeDelay.note === 'string' ? value.activeDelay.note.slice(0, 500) : '',
+          delayMinutes: [5, 10, 20].includes(value.activeDelay.delayMinutes) ? value.activeDelay.delayMinutes : 10,
+        }
+      : null,
+  }
+}
+
 function migrateSession(item) {
   const migrated = {
     id: item.id,
@@ -163,47 +258,32 @@ function migrateSession(item) {
 }
 
 export function migrateData(value) {
-  if (!isRecord(value)) return { schemaVersion: SCHEMA_VERSION, settings: { ...DEFAULT_SETTINGS }, sessions: [] }
+  if (!isRecord(value)) return { schemaVersion: SCHEMA_VERSION, settings: { ...DEFAULT_SETTINGS }, sessions: [], reset: structuredClone(DEFAULT_RESET_DATA) }
 
   if (value.schemaVersion === SCHEMA_VERSION) {
     return {
       schemaVersion: SCHEMA_VERSION,
       settings: normalizeSettings(value.settings),
       sessions: Array.isArray(value.sessions) ? value.sessions.filter(validSession).map(migrateSession).slice(-5000) : [],
+      reset: normalizeResetData(value.reset),
     }
   }
 
-  if (value.schemaVersion === 1) {
+  if ([1, 2, 3, 4].includes(value.schemaVersion)) {
+    const validSessions = value.schemaVersion === 1 ? validLegacySession : validSession
     return {
       schemaVersion: SCHEMA_VERSION,
       settings: normalizeSettings(value.settings),
-      sessions: Array.isArray(value.sessions) ? value.sessions.filter(validLegacySession).map((item) => ({
-        ...migrateSession(item),
-        emotionBefore: null,
-        emotionAfter: null,
-        focusBefore: null,
-        focusAfter: item.focus,
-      })).slice(-5000) : [],
+      sessions: Array.isArray(value.sessions) ? value.sessions.filter(validSessions).map((item) => (
+        value.schemaVersion === 1
+          ? { ...migrateSession(item), emotionBefore: null, emotionAfter: null, focusBefore: null, focusAfter: item.focus }
+          : migrateSession(item)
+      )).slice(-5000) : [],
+      reset: structuredClone(DEFAULT_RESET_DATA),
     }
   }
 
-  if (value.schemaVersion === 2) {
-    return {
-      schemaVersion: SCHEMA_VERSION,
-      settings: normalizeSettings(value.settings),
-      sessions: Array.isArray(value.sessions) ? value.sessions.filter(validSession).map(migrateSession).slice(-5000) : [],
-    }
-  }
-
-  if (value.schemaVersion === 3) {
-    return {
-      schemaVersion: SCHEMA_VERSION,
-      settings: normalizeSettings(value.settings),
-      sessions: Array.isArray(value.sessions) ? value.sessions.filter(validSession).map(migrateSession).slice(-5000) : [],
-    }
-  }
-
-  return { schemaVersion: SCHEMA_VERSION, settings: { ...DEFAULT_SETTINGS }, sessions: [] }
+  return { schemaVersion: SCHEMA_VERSION, settings: { ...DEFAULT_SETTINGS }, sessions: [], reset: structuredClone(DEFAULT_RESET_DATA) }
 }
 
 function normalizeData(value) {
@@ -228,7 +308,11 @@ export function writeData(data) {
   try {
     window.localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify(normalizeData({ ...data, schemaVersion: SCHEMA_VERSION })),
+      JSON.stringify(normalizeData({
+        ...data,
+        reset: data.reset ?? readData().reset,
+        schemaVersion: SCHEMA_VERSION,
+      })),
     )
     return true
   } catch (error) {
@@ -248,12 +332,12 @@ export function clearData() {
 }
 
 export function importData(value) {
-  if (!isRecord(value) || ![1, 2, 3, SCHEMA_VERSION].includes(value.schemaVersion) || !isRecord(value.settings) || !Array.isArray(value.sessions)) {
+  if (!isRecord(value) || ![1, 2, 3, 4, SCHEMA_VERSION].includes(value.schemaVersion) || !isRecord(value.settings) || !Array.isArray(value.sessions)) {
     throw new Error('Tệp không đúng định dạng dữ liệu Boring Time.')
   }
   if (
     (value.schemaVersion === SCHEMA_VERSION && !value.sessions.every(validSession)) ||
-    (value.schemaVersion === 3 && !value.sessions.every(validSession)) ||
+    ([2, 3, 4].includes(value.schemaVersion) && !value.sessions.every(validSession)) ||
     (value.schemaVersion === 2 && !value.sessions.every(validSession)) ||
     (value.schemaVersion === 1 && !value.sessions.every(validLegacySession))
   ) {
@@ -262,11 +346,12 @@ export function importData(value) {
   return migrateData(value)
 }
 
-export function exportData(settings, sessions) {
+export function exportData(settings, sessions, reset = readData().reset) {
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     settings: normalizeSettings(settings),
     sessions: sessions.filter(validSession),
+    reset: normalizeResetData(reset),
   }
 }

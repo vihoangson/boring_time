@@ -41,12 +41,17 @@ Mở địa chỉ Vite hiển thị trong terminal (thường là `http://localh
 - Lưu ý nhẹ nhàng: thở không gắng sức, quay lại nhịp tự nhiên nếu thấy khó chịu. Bài tập thư giãn không thay thế tư vấn y tế.
 - PWA có manifest, icon đơn giản và service worker precache để sử dụng offline sau lần mở đầu tiên; có thông báo nhỏ khi bản mới sẵn sàng.
 - Giao diện responsive, hỗ trợ bàn phím và `prefers-reduced-motion`.
+- Mục **Giảm kích thích / Reset tập trung**: thẻ ghi nhanh thôi thúc, khoảng trì hoãn 5/10/20 phút có nhịp thở nhẹ và ambient tùy chọn, nhật ký/biểu đồ theo giờ và cảm xúc, bản đồ thói quen, kế hoạch nếu–thì và hoạt động thay thế.
+- Cho phép tự thêm/sửa/xóa thói quen và hoạt động, đánh giá mức ảnh hưởng, đặt tối đa năm kế hoạch. Không có điểm thưởng hay nhãn thất bại.
 
 ## Dữ liệu, riêng tư và giới hạn
 
 - Dữ liệu được lưu cục bộ trong localStorage của origin đang mở; restart container không xóa dữ liệu, nhưng đổi trình duyệt/thiết bị hoặc dọn dữ liệu trình duyệt thì không tự đồng bộ. Cài đặt “Không ghi lại dữ liệu” ngăn ghi session mới.
-- Storage dùng `schemaVersion: 4`; khi mở ứng dụng, dữ liệu phiên bản 1, 2 và 3 được migrate tại chỗ, giữ cài đặt/phiên cũ. Chạy `npm test` để xác minh. Tệp JSON phiên bản 1, 2 và 3 cũng được migrate khi nhập.
+- Storage dùng `schemaVersion: 5`; khi mở ứng dụng, dữ liệu phiên bản 1–4 được migrate tại chỗ, giữ cài đặt/phiên cũ. Chạy `npm test` để xác minh. Tệp JSON phiên bản 1–4 cũng được migrate khi nhập; JSON xuất ra bao gồm dữ liệu Reset.
 - Dùng **Lịch sử → Xuất JSON** để sao lưu định kỳ và trước khi nhập tệp khác. Nhập sẽ thay thế cài đặt và lịch sử hiện tại; ứng dụng không gửi dữ liệu tới máy chủ.
+- Tắt **Lưu lịch sử trên thiết bị** sẽ ngăn lưu nhật ký thôi thúc và hoạt động thay thế mới; bài tập vẫn dùng được. Cấu hình thói quen/kế hoạch vẫn lưu cục bộ để tiếp tục dùng.
+- Reset không chặn được ứng dụng hay trang web khác. Nếu phù hợp, người dùng có thể tự bật Không làm phiền/Focus của hệ điều hành; không có thông báo khi app hoàn toàn đóng.
+- Nếu cảm giác buồn chán, mất hứng thú hoặc lo âu kéo dài và nặng, trò chuyện với người thân hoặc chuyên gia là một lựa chọn.
 - Lời nhắc được kiểm tra khi ứng dụng đang chạy. Notification API có thể hiện thông báo hệ thống khi được cấp quyền; nếu không, nhắc trong giao diện. Trình duyệt không thể nhắc khi ứng dụng/PWA hoàn toàn đã đóng vì không có backend hoặc dịch vụ push.
 - Cài PWA cần mở qua `localhost` hoặc HTTPS. Tính năng offline có hiệu lực sau lần tải đầy đủ đầu tiên.
 - Hít thở mở đầu mặc định tắt; các thẻ cảm xúc, điểm và nhật ký đều không bắt buộc. Thoát sớm không bị phạt.
@@ -58,12 +63,14 @@ src/
   components/
     activities/       # Năm hoạt động riêng biệt
     breathing/        # Hình ảnh dẫn nhịp thở
+    urge/             # Thẻ nhanh, thống kê, bản đồ thói quen và kế hoạch
     ui/               # Picker, header và thành phần dùng chung
   composables/         # Timer, âm thanh, Wake Lock, PWA update và engine thở
   data/breathingPatterns.js # Cấu hình các bài thở
   router/              # Điều hướng Vue Router
   services/storage.js  # localStorage, schema/migrate, nhập/xuất JSON
   stores/              # Pinia: cài đặt, lịch sử, session hiện tại
+  stores/urges.js      # Thói quen, nhật ký thôi thúc và hoạt động thay thế
   views/               # Bắt đầu, session, đáp xuống, hoàn tất, tập trung, lịch sử, cài đặt
 public/
   manifest.webmanifest
@@ -85,6 +92,10 @@ nginx.conf
 ## Thêm bài thở
 
 Thêm một object vào `BREATHING_PATTERNS` trong `src/data/breathingPatterns.js`, gồm `id`, `name`, `description`, `recommendation` và danh sách `phases` (`id`, `label`, `seconds`). Mỗi pha hiện cần nằm trong 1–12 giây; nên giữ nhịp tự nhiên và tránh yêu cầu gắng sức. Pha giữ hơi không bắt buộc và người tập luôn có thể dừng hoặc quay về thở bình thường.
+
+## Thêm thói quen hoặc hoạt động Reset mặc định
+
+Thêm object vào `DEFAULT_HABITS` hoặc `DEFAULT_ALTERNATIVES` trong `src/data/urgeDefaults.js`. Thói quen có `id`, `name`, mức ảnh hưởng 1–5; hoạt động có `id`, `name`, `minutes` (5/15/30) và `energy` (`low`/`medium`). Người dùng cũng có thể tự quản lý các danh sách này trong trang Reset.
 
 ## Chuẩn bị thêm ngôn ngữ
 
