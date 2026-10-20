@@ -1,5 +1,7 @@
 # Boring Time
 
+! Url claude: https://claude.ai/chat/f66f4ad5-0898-455f-800d-56d6841ae352
+
 Boring Time là ứng dụng web tiếng Việt giúp chủ động dành một khoảng lặng ít kích thích, sau đó nhẹ nhàng trở lại với việc định làm. Ứng dụng không có backend hay database: cài đặt và nhật ký phiên chỉ nằm trong `localStorage` trên thiết bị/trình duyệt hiện tại.
 
 ## Chạy bằng Docker
