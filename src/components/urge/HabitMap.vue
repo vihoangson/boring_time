@@ -25,7 +25,7 @@ function add() {
 <template>
   <section class="reset-section">
     <h2>Bản đồ thói quen</h2>
-    <p class="muted-note">Mức ảnh hưởng là tự đánh giá của bạn, không phải thang đo khách quan.</p>
+    <p class="muted-note">Mức ảnh hưởng lên hiệu suất do bạn tự đánh giá, không phải thang đo khách quan.</p>
     <ul class="reset-edit-list">
       <li v-for="habit in urges.habits" :key="habit.id">
         <label>

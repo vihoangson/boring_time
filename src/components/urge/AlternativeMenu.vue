@@ -78,8 +78,19 @@ function add() {
             maxlength="80"
             @change="urges.updateAlternative(activity.id, { name: $event.target.value })"
           />
-          <small>{{ activity.minutes }} phút · năng lượng {{ activity.energy === 'low' ? 'thấp' : 'vừa' }}</small>
         </div>
+        <label class="alternative-edit-field">
+          <span class="visually-hidden">Thời lượng hoạt động</span>
+          <select :value="activity.minutes" :aria-label="`Thời lượng của ${activity.name}`" @change="urges.updateAlternative(activity.id, { minutes: Number($event.target.value) })">
+            <option :value="5">5 phút</option><option :value="15">15 phút</option><option :value="30">30 phút</option>
+          </select>
+        </label>
+        <label class="alternative-edit-field">
+          <span class="visually-hidden">Mức năng lượng</span>
+          <select :value="activity.energy" :aria-label="`Mức năng lượng của ${activity.name}`" @change="urges.updateAlternative(activity.id, { energy: $event.target.value })">
+            <option value="low">Thấp</option><option value="medium">Vừa</option>
+          </select>
+        </label>
         <button class="text-button" type="button" :aria-label="`Đánh dấu đã làm: ${activity.name}`" @click="startCompletion(activity)">Đã làm</button>
         <button class="text-button danger-text" type="button" :aria-label="`Xóa hoạt động ${activity.name}`" @click="urges.removeAlternative(activity.id)">Xóa</button>
         <form v-if="completingId === activity.id" class="alternative-note-form" @submit.prevent="saveCompletion">
