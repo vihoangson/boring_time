@@ -5,9 +5,11 @@ import AppHeader from '../components/ui/AppHeader.vue'
 import BreathVisual from '../components/breathing/BreathVisual.vue'
 import AlternativeMenu from '../components/urge/AlternativeMenu.vue'
 import { useAudio } from '../composables/useAudio'
+import { useSessionStore } from '../stores/session'
 import { useUrgesStore } from '../stores/urges'
 
 const urges = useUrgesStore()
+const session = useSessionStore()
 const router = useRouter()
 const now = ref(Date.now())
 const showOutcome = ref(false)
@@ -58,15 +60,22 @@ async function toggleAmbient() {
 
 function saveOutcome() {
   if (!selectedOutcome.value || !selectedDecision.value) return
+  const returnRoute = urges.returnRoute
   urges.finishDelay(selectedOutcome.value, selectedDecision.value)
   showOutcome.value = false
-  router.replace({ name: 'reset' })
+  returnFromDelay(returnRoute)
 }
 
 function exitEarly() {
+  const returnRoute = urges.returnRoute
   urges.exitDelayEarly()
   showOutcome.value = false
-  router.replace({ name: 'reset' })
+  returnFromDelay(returnRoute)
+}
+
+function returnFromDelay(returnRoute) {
+  if (session.active && returnRoute === '/session') session.resume()
+  router.replace(returnRoute || { name: 'reset' })
 }
 
 onMounted(() => {

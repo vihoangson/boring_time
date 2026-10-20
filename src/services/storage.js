@@ -151,7 +151,7 @@ function normalizeResetData(value) {
   const entryIds = new Set()
   const urgeEntries = Array.isArray(value.urgeEntries)
     ? value.urgeEntries.filter((item) => {
-        if (!isRecord(item) || typeof item.id !== 'string' || entryIds.has(item.id) || typeof item.createdAt !== 'string' ||
+        if (!isRecord(item) || typeof item.id !== 'string' || entryIds.has(item.id) || typeof item.createdAt !== 'string' || !Number.isFinite(Date.parse(item.createdAt)) ||
           typeof item.habitId !== 'string' || !URGE_EMOTIONS.includes(item.emotion) ||
           (item.outcome !== null && item.outcome !== undefined && !URGE_OUTCOMES.includes(item.outcome)) ||
           (item.decision !== null && item.decision !== undefined && !URGE_DECISIONS.includes(item.decision)) ||
@@ -187,7 +187,7 @@ function normalizeResetData(value) {
     : []
   const alternativeEntries = Array.isArray(value.alternativeEntries)
     ? value.alternativeEntries.filter((item) => isRecord(item) && typeof item.id === 'string' &&
-      typeof item.createdAt === 'string' && typeof item.activityId === 'string' &&
+      typeof item.createdAt === 'string' && Number.isFinite(Date.parse(item.createdAt)) && typeof item.activityId === 'string' &&
       (item.note === undefined || typeof item.note === 'string'))
       .slice(-5000).map((item) => ({
         id: item.id,
@@ -208,7 +208,7 @@ function normalizeResetData(value) {
     gradualDelay: typeof value.gradualDelay === 'boolean' ? value.gradualDelay : false,
     activeDelay: isRecord(value.activeDelay) &&
       typeof value.activeDelay.id === 'string' &&
-      typeof value.activeDelay.createdAt === 'string' &&
+      typeof value.activeDelay.createdAt === 'string' && Number.isFinite(Date.parse(value.activeDelay.createdAt)) &&
       typeof value.activeDelay.deadline === 'number' && Number.isFinite(value.activeDelay.deadline) &&
       typeof value.activeDelay.habitId === 'string' &&
       typeof value.activeDelay.habitName === 'string' &&
@@ -338,7 +338,6 @@ export function importData(value) {
   if (
     (value.schemaVersion === SCHEMA_VERSION && !value.sessions.every(validSession)) ||
     ([2, 3, 4].includes(value.schemaVersion) && !value.sessions.every(validSession)) ||
-    (value.schemaVersion === 2 && !value.sessions.every(validSession)) ||
     (value.schemaVersion === 1 && !value.sessions.every(validLegacySession))
   ) {
     throw new Error('Tệp có một hoặc nhiều phiên không hợp lệ.')

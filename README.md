@@ -67,11 +67,12 @@ src/
     ui/               # Picker, header và thành phần dùng chung
   composables/         # Timer, âm thanh, Wake Lock, PWA update và engine thở
   data/breathingPatterns.js # Cấu hình các bài thở
+  data/urgeDefaults.js      # Thói quen và hoạt động thay thế mặc định
   router/              # Điều hướng Vue Router
   services/storage.js  # localStorage, schema/migrate, nhập/xuất JSON
   stores/              # Pinia: cài đặt, lịch sử, session hiện tại
   stores/urges.js      # Thói quen, nhật ký thôi thúc và hoạt động thay thế
-  views/               # Bắt đầu, session, đáp xuống, hoàn tất, tập trung, lịch sử, cài đặt
+  views/               # Bắt đầu, session, đáp xuống, hoàn tất, tập trung, Reset, lịch sử, cài đặt
 public/
   manifest.webmanifest
   icon.svg

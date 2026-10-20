@@ -37,7 +37,7 @@ router.beforeEach((to) => {
   const urges = useUrgesStore()
   if (to.name === 'session' && !session.active) return { name: 'home' }
   if (['landing', 'finish'].includes(to.name) && !session.endedAt) return { name: 'home' }
-  if (session.active && to.name !== 'session') return { name: 'session' }
+  if (session.active && to.name !== 'session' && !(to.name === 'urge-delay' && urges.returnRoute === '/session')) return { name: 'session' }
   if (breathing.active && to.name !== 'breathing') return { name: 'breathing' }
   if (urges.activeDelay && to.name !== 'urge-delay') return { name: 'urge-delay' }
   if (to.name === 'urge-delay' && !urges.activeDelay) return { name: 'reset' }

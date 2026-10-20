@@ -9,7 +9,7 @@ import UrgeQuickCard from './components/urge/UrgeQuickCard.vue'
 const settings = useSettingsStore()
 const route = useRoute()
 const quickCardOpen = ref(false)
-const showUrgeShortcut = computed(() => !['session', 'breathing', 'urge-delay', 'landing', 'finish', 'focus'].includes(route.name))
+const showUrgeShortcut = computed(() => !['breathing', 'urge-delay', 'focus'].includes(route.name))
 const { updateAvailable, applyUpdate } = usePwaUpdates()
 const { inAppReminder } = useReminders()
 

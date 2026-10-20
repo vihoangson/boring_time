@@ -2,12 +2,14 @@
 import { computed, ref } from 'vue'
 import { URGE_EMOTIONS } from '../../data/urgeDefaults'
 import { useSettingsStore } from '../../stores/settings'
+import { useSessionStore } from '../../stores/session'
 import { useUrgesStore } from '../../stores/urges'
 import { useRouter } from 'vue-router'
 
 const emit = defineEmits(['close'])
 const urges = useUrgesStore()
 const settings = useSettingsStore()
+const session = useSessionStore()
 const router = useRouter()
 const habitId = ref(urges.habits[0]?.id || '')
 const emotion = ref(URGE_EMOTIONS[0])
@@ -15,7 +17,12 @@ const note = ref('')
 const habits = computed(() => urges.habits)
 
 function begin() {
-  if (!urges.beginUrge({ habitId: habitId.value, emotion: emotion.value, note: note.value })) return
+  const returnRoute = router.currentRoute.value.fullPath
+  if (session.active) session.pause()
+  if (!urges.beginUrge({ habitId: habitId.value, emotion: emotion.value, note: note.value, returnRoute })) {
+    if (session.active) session.resume()
+    return
+  }
   emit('close')
   router.push({ name: 'urge-delay' })
 }

@@ -10,6 +10,7 @@ export const useUrgesStore = defineStore('urges', {
   state: () => ({
     ...readData().reset,
     activeDelay: null,
+    returnRoute: '',
     delayRemainingMs: 0,
   }),
   getters: {
@@ -118,7 +119,7 @@ export const useUrgesStore = defineStore('urges', {
       if (current === 10 && this.urgeEntries.length >= 6) return 20
       return null
     },
-    beginUrge({ habitId, emotion, note = '' }) {
+    beginUrge({ habitId, emotion, note = '', returnRoute = '' }) {
       const habit = this.habits.find((item) => item.id === habitId)
       if (!habit || !emotion) return false
       const entry = {
@@ -138,6 +139,7 @@ export const useUrgesStore = defineStore('urges', {
         this.urgeEntries = this.urgeEntries.slice(0, 5000)
       }
       this.activeDelay = { ...entry, deadline: Date.now() + this.delayMinutes * 60_000 }
+      this.returnRoute = returnRoute
       this.delayRemainingMs = this.delayMinutes * 60_000
       this.persist()
       return true
@@ -155,6 +157,7 @@ export const useUrgesStore = defineStore('urges', {
         entry.decision = decision
       }
       this.activeDelay = null
+      this.returnRoute = ''
       this.delayRemainingMs = 0
       this.persist()
     },
@@ -164,6 +167,7 @@ export const useUrgesStore = defineStore('urges', {
       const entry = this.urgeEntries.find((item) => item.id === active.id)
       if (entry) entry.exitedEarly = true
       this.activeDelay = null
+      this.returnRoute = ''
       this.delayRemainingMs = 0
       this.persist()
     },
@@ -178,6 +182,7 @@ export const useUrgesStore = defineStore('urges', {
         delayMinutes: 10,
         gradualDelay: false,
         activeDelay: null,
+        returnRoute: '',
         delayRemainingMs: 0,
       })
       this.persist()
@@ -186,6 +191,7 @@ export const useUrgesStore = defineStore('urges', {
       this.$patch({
         ...reset,
         activeDelay: null,
+        returnRoute: '',
         delayRemainingMs: 0,
       })
       this.persist()
@@ -195,6 +201,7 @@ export const useUrgesStore = defineStore('urges', {
       this.$patch({
         ...defaults,
         activeDelay: null,
+        returnRoute: '',
         delayRemainingMs: 0,
       })
     },

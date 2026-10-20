@@ -110,7 +110,7 @@ test('writes new session fields in the current schema', () => {
   assert.deepEqual(readData().sessions[0], data.sessions[0])
 })
 
-test('migrates v3 data to v4 without losing settings or session records', () => {
+test('migrates v3 data to the current schema without losing settings or session records', () => {
   const migrated = importData({
     schemaVersion: 3,
     settings: { duration: 15, activity: 'paint', sound: 'rain', volume: 0.2, showTimer: false, theme: 'dark', saveData: true },
@@ -247,4 +247,25 @@ test('retains old urge log snapshots if a habit is later removed', () => {
 
   assert.equal(writeData(data), true)
   assert.equal(readData().reset.urgeEntries[0].habitName, 'Thói quen đã xóa')
+})
+
+test('restores an in-progress delay from its saved timestamp', () => {
+  const activeDelay = {
+    id: 'urge-active',
+    createdAt: '2026-10-20T12:00:00.000Z',
+    deadline: 1792497900000,
+    habitId: 'social',
+    habitName: 'Lướt mạng xã hội',
+    emotion: 'Chán',
+    note: '',
+    delayMinutes: 10,
+  }
+  const data = importData({
+    schemaVersion: SCHEMA_VERSION,
+    settings: DEFAULT_SETTINGS,
+    sessions: [],
+    reset: { activeDelay },
+  })
+
+  assert.deepEqual(data.reset.activeDelay, activeDelay)
 })

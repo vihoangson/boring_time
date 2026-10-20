@@ -53,7 +53,15 @@ async function pause() {
 async function resume() {
   session.resume()
   pausedByVisibility.value = false
-  if (audioReady.value) await resumeAudio()
+  try {
+    if (audioReady.value) await resumeAudio()
+    else if (session.soundLayers.length) {
+      await startAudio(session.soundLayers)
+      audioReady.value = true
+    }
+  } catch (error) {
+    console.warn('Âm thanh không thể tiếp tục trên trình duyệt này.', error)
+  }
 }
 async function exitEarly() {
   cancelExitHold()
@@ -133,8 +141,10 @@ onMounted(async () => {
   window.addEventListener('keyup', onKeyUp)
   window.addEventListener('beforeunload', beforeUnload)
   try {
-    await startAudio(session.soundLayers)
-    audioReady.value = session.soundLayers.length > 0
+    if (!session.paused) {
+      await startAudio(session.soundLayers)
+      audioReady.value = session.soundLayers.length > 0
+    }
   } catch (error) {
     console.warn('Âm thanh không thể phát trên trình duyệt này.', error)
   }
