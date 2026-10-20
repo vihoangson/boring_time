@@ -1,14 +1,17 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '../components/ui/AppHeader.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useSessionStore } from '../stores/session'
 import EmotionPicker from '../components/ui/EmotionPicker.vue'
 import ScalePicker from '../components/ui/ScalePicker.vue'
+import { useSessionsStore } from '../stores/sessions'
+import SoundMixer from '../components/ui/SoundMixer.vue'
 
 const settings = useSettingsStore()
 const session = useSessionStore()
+const sessions = useSessionsStore()
 const router = useRouter()
 const durations = [5, 10, 15, 20]
 const activities = [
@@ -23,12 +26,34 @@ const sounds = [
   { id: 'white', name: 'Tiếng ồn trắng nhẹ' },
   { id: 'rain', name: 'Mưa đều' },
   { id: 'tick', name: 'Tích tắc chậm' },
-  { id: 'silence', name: 'Im lặng' },
 ]
 const nextTask = ref('')
 const emotionBefore = ref(null)
 const focusBefore = ref(null)
-const volumeLabel = computed(() => `${Math.round(settings.volume * 100)}%`)
+const durationOptions = computed(() => [...new Set([...durations, settings.duration])].sort((a, b) => a - b))
+const increaseSuggestion = computed(() => {
+  if (!settings.suggestDurationIncrease || settings.duration >= 22) return null
+  const latest = [...sessions.items]
+    .sort((a, b) => new Date(b.endedAt) - new Date(a.endedAt))
+    .slice(0, 3)
+  return latest.length === 3 && latest.every((item) => item.completed && item.plannedDuration === settings.duration)
+    ? settings.duration + 2
+    : null
+})
+
+function chooseForMe() {
+  const activity = activities[Math.floor(Math.random() * activities.length)]
+  const sound = [...sounds, { id: 'silence', name: 'Im lặng' }][Math.floor(Math.random() * (sounds.length + 1))]
+  settings.update({
+    activity: activity.id,
+    silentAudio: sound.id === 'silence',
+    sound: sound.id,
+    soundLayers: sound.id === 'silence'
+      ? settings.soundLayers
+      : [{ type: sound.id, volume: 0.08 }],
+  })
+}
+
 function start() {
   session.start(settings.$state, {
     nextTask: nextTask.value.trim(),
@@ -37,6 +62,16 @@ function start() {
   })
   router.push('/session')
 }
+
+function onShortcut(event) {
+  if (event.code !== 'Space' || event.repeat) return
+  if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, button, summary, [contenteditable="true"]')) return
+  event.preventDefault()
+  start()
+}
+
+onMounted(() => window.addEventListener('keydown', onShortcut))
+onUnmounted(() => window.removeEventListener('keydown', onShortcut))
 </script>
 
 <template>
@@ -46,6 +81,7 @@ function start() {
       <p class="eyebrow">Một khoảng lặng có chủ đích</p>
       <h1>Không cần làm gì cả.</h1>
       <p class="intro-copy">Hãy để tâm trí nghỉ ngơi một chút trước khi tiếp tục.</p>
+      <RouterLink class="secondary-button home-breathing-link" to="/breathing">Tập thở · 3 phút</RouterLink>
 
       <div class="setup-section next-task-section">
         <label class="field-label" for="next-task">Việc tiếp theo bạn định làm? <span>Không bắt buộc</span></label>
@@ -64,7 +100,7 @@ function start() {
         <h2>Thời lượng</h2>
         <div class="choice-row duration-row" aria-label="Chọn thời lượng">
           <button
-            v-for="duration in durations"
+            v-for="duration in durationOptions"
             :key="duration"
             class="choice"
             :class="{ selected: settings.duration === duration }"
@@ -73,6 +109,10 @@ function start() {
             @click="settings.update({ duration })"
           >{{ duration }} <span>phút</span></button>
         </div>
+        <p v-if="increaseSuggestion" class="duration-suggestion" role="status">
+          Bạn đã hoàn thành ba phiên ở {{ settings.duration }} phút. Nếu thấy phù hợp, có thể thử {{ increaseSuggestion }} phút.
+          <button type="button" @click="settings.update({ duration: increaseSuggestion })">Chọn {{ increaseSuggestion }} phút</button>
+        </p>
       </div>
 
       <div class="setup-section">
@@ -93,30 +133,8 @@ function start() {
         </div>
       </div>
 
-      <div class="setup-section sound-section">
-        <div>
-          <h2>Âm thanh</h2>
-          <select
-            :value="settings.sound"
-            aria-label="Chọn âm thanh"
-            @change="settings.update({ sound: $event.target.value })"
-          >
-            <option v-for="sound in sounds" :key="sound.id" :value="sound.id">{{ sound.name }}</option>
-          </select>
-        </div>
-        <label class="volume-control">
-          Âm lượng <span>{{ volumeLabel }}</span>
-          <input
-            :value="settings.volume"
-            aria-label="Âm lượng"
-            type="range"
-            min="0"
-            max="0.3"
-            step="0.01"
-            @input="settings.update({ volume: Number($event.target.value) })"
-          />
-        </label>
-      </div>
+      <div class="setup-section"><SoundMixer /></div>
+      <button class="quiet-button choose-random" type="button" aria-label="Chọn ngẫu nhiên hoạt động và âm thanh" @click="chooseForMe">Chọn giúp tôi</button>
       <button class="primary-button start-button" type="button" aria-label="Bắt đầu phiên nghỉ" @click="start">Bắt đầu</button>
       <p class="quiet-note">Không có mục tiêu nào cần đạt.</p>
     </section>

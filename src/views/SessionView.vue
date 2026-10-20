@@ -23,7 +23,7 @@ const exitProgress = ref(0)
 let exitTimer
 let exitInterval
 let holdStartedAt = 0
-let lastDepartureAt = 0
+let departureRecorded = false
 let completing = false
 const activities = { dot: DotActivity, count: CountActivity, lines: LinesActivity, paint: PaintActivity, typing: TypingActivity }
 const activityComponent = computed(() => activities[session.activity] || DotActivity)
@@ -33,12 +33,12 @@ const formattedTime = computed(() => {
 })
 useWakeLock(computed(() => session.active && !session.paused))
 
-async function finishSession() {
+async function finishSession(completedNaturally = false) {
   if (completing) return
   completing = true
   finishing.value = true
   await stopAudio()
-  session.finish()
+  session.finish(completedNaturally)
   router.replace('/landing')
 }
 
@@ -62,9 +62,9 @@ async function exitEarly() {
 }
 
 function recordDeparture() {
-  const now = Date.now()
-  if (now - lastDepartureAt > 1200) session.recordLeave()
-  lastDepartureAt = now
+  if (departureRecorded) return
+  departureRecorded = true
+  session.recordLeave()
 }
 
 function onVisibility() {
@@ -97,7 +97,16 @@ function cancelExitHold() {
   window.clearInterval(exitInterval)
 }
 function onKeyDown(event) {
-  if (event.key !== 'Escape' || event.repeat) return
+  if (event.repeat) return
+  if (event.code === 'Space') {
+    if (event.target instanceof HTMLElement && event.target.closest('button, input, textarea, select')) return
+    event.preventDefault()
+    event.stopPropagation()
+    if (session.paused) resume()
+    else pause()
+    return
+  }
+  if (event.key !== 'Escape') return
   event.preventDefault()
   beginExitHold()
 }
@@ -106,6 +115,9 @@ function onKeyUp(event) {
 }
 function onWindowBlur() {
   if (session.active && document.visibilityState === 'visible') recordDeparture()
+}
+function onWindowFocus() {
+  departureRecorded = false
 }
 function beforeUnload(event) {
   if (!session.active) return
@@ -116,12 +128,13 @@ function beforeUnload(event) {
 onMounted(async () => {
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('blur', onWindowBlur)
-  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('focus', onWindowFocus)
+  window.addEventListener('keydown', onKeyDown, true)
   window.addEventListener('keyup', onKeyUp)
   window.addEventListener('beforeunload', beforeUnload)
   try {
-    await startAudio(session.sound, session.volume)
-    audioReady.value = session.sound !== 'silence'
+    await startAudio(session.soundLayers)
+    audioReady.value = session.soundLayers.length > 0
   } catch (error) {
     console.warn('Âm thanh không thể phát trên trình duyệt này.', error)
   }
@@ -129,7 +142,8 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibility)
   window.removeEventListener('blur', onWindowBlur)
-  window.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('focus', onWindowFocus)
+  window.removeEventListener('keydown', onKeyDown, true)
   window.removeEventListener('keyup', onKeyUp)
   window.removeEventListener('beforeunload', beforeUnload)
   window.clearTimeout(exitTimer)
@@ -160,11 +174,10 @@ onUnmounted(() => {
       <span>Thoát</span>
     </button>
     <p v-if="session.phase === 'breathing'" class="session-footnote">Hãy hít thở thật tự nhiên</p>
-    <p v-else class="session-footnote">Giữ Esc hoặc nút Thoát trong 3 giây để kết thúc</p>
     <section v-if="session.paused" class="pause-message" role="status">
       <p>{{ pausedByVisibility ? 'Phiên đã tạm dừng khi bạn rời khỏi trang.' : 'Phiên đang tạm dừng.' }}</p>
       <button class="quiet-button" type="button" @click="resume">Tiếp tục khi bạn sẵn sàng</button>
     </section>
-    <p class="session-footnote">Nhấn Esc giữ 2 giây để kết thúc</p>
+    <p v-if="session.phase !== 'breathing'" class="session-footnote">Giữ Esc hoặc nút Thoát trong 3 giây để kết thúc</p>
   </main>
 </template>

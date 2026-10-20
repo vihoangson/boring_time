@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '../components/ui/AppHeader.vue'
 import EmotionPicker from '../components/ui/EmotionPicker.vue'
@@ -25,6 +25,8 @@ function save() {
     id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     endedAt: session.endedAt || new Date().toISOString(),
     duration: durationMinutes.value,
+    plannedDuration: session.duration,
+    completed: session.completedNaturally,
     activity: session.activity,
     sound: session.sound,
     emotionBefore: session.emotionBefore,
@@ -48,6 +50,14 @@ function startFocus() {
   if (!saved.value) save()
   router.push('/focus')
 }
+
+function onScoreShortcut(event) {
+  if (!/^[1-5]$/.test(event.key)) return
+  if (event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable="true"]')) return
+  focusAfter.value = Number(event.key)
+}
+onMounted(() => window.addEventListener('keydown', onScoreShortcut))
+onUnmounted(() => window.removeEventListener('keydown', onScoreShortcut))
 </script>
 
 <template>

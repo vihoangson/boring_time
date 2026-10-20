@@ -13,6 +13,7 @@ export const useSessionStore = defineStore('active-session', {
     activity: 'dot',
     sound: 'brown',
     volume: 0.12,
+    soundLayers: [{ type: 'brown', volume: 0.12 }],
     nextTask: '',
     emotionBefore: null,
     focusBefore: null,
@@ -23,12 +24,14 @@ export const useSessionStore = defineStore('active-session', {
     note: '',
     endedAt: '',
     elapsedSeconds: 0,
+    completedNaturally: false,
   }),
   actions: {
     start(config, reflection = {}) {
       this.duration = config.duration
       this.activity = config.activity
-      this.sound = config.sound
+      this.soundLayers = config.silentAudio ? [] : (config.soundLayers || [])
+      this.sound = this.soundLayers.map((layer) => layer.type).join('+') || 'silence'
       this.volume = config.volume
       this.nextTask = reflection.nextTask || ''
       this.emotionBefore = reflection.emotionBefore || null
@@ -47,6 +50,7 @@ export const useSessionStore = defineStore('active-session', {
       this.active = true
       this.endedAt = ''
       this.elapsedSeconds = 0
+      this.completedNaturally = false
     },
     beginActivity() {
       this.phase = 'activity'
@@ -75,7 +79,7 @@ export const useSessionStore = defineStore('active-session', {
     updateRemaining() {
       if (this.active && !this.paused) this.remainingMs = Math.max(0, this.deadline - Date.now())
     },
-    finish() {
+    finish(completedNaturally = false) {
       this.updateRemaining()
       this.elapsedSeconds = this.phase === 'activity'
         ? Math.max(0, Math.round(this.duration * 60 - this.remainingMs / 1000))
@@ -84,6 +88,7 @@ export const useSessionStore = defineStore('active-session', {
       this.active = false
       this.paused = false
       this.phase = 'landing'
+      this.completedNaturally = completedNaturally
     },
     reset() {
       this.active = false

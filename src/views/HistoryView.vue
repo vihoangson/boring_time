@@ -9,8 +9,23 @@ const sessions = useSessionsStore()
 const settings = useSettingsStore()
 const notice = ref('')
 const fileInput = ref(null)
-const activityNames = { dot: 'Chấm chạy chậm', count: 'Đếm vô nghĩa', lines: 'Đường kẻ lặp', paint: 'Sơn khô', typing: 'Gõ lặp' }
-const soundNames = { brown: 'Tiếng ồn nâu', white: 'Tiếng ồn trắng nhẹ', rain: 'Mưa đều', tick: 'Tích tắc chậm', silence: 'Im lặng' }
+const startDate = ref('')
+const endDate = ref('')
+const selectedActivity = ref('all')
+const activityNames = {
+  dot: 'Chấm chạy chậm',
+  count: 'Đếm vô nghĩa',
+  lines: 'Đường kẻ lặp',
+  paint: 'Sơn khô',
+  typing: 'Gõ lặp',
+  gentle: 'Thở chậm nhẹ nhàng',
+  coherent: 'Thở nhịp đồng bộ',
+  box: 'Thở vuông (box)',
+}
+const soundNames = { brown: 'Tiếng ồn nâu', white: 'Tiếng ồn trắng nhẹ', rain: 'Mưa đều', tick: 'Tích tắc chậm', silence: 'Im lặng', 'breath-tone': 'Âm tông dẫn nhịp' }
+function soundLabel(value) {
+  return value.split('+').map((sound) => soundNames[sound] || sound).join(' + ')
+}
 const recentWeeks = computed(() => {
   const now = new Date()
   return Array.from({ length: 7 }, (_, index) => {
@@ -32,6 +47,24 @@ const recentWeeks = computed(() => {
   })
 })
 const maxSessions = computed(() => Math.max(1, ...recentWeeks.value.map((day) => day.count)))
+const filteredSessions = computed(() => sessions.items.filter((item) => {
+  const date = new Date(item.endedAt)
+  const day = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  return (!startDate.value || day >= startDate.value) &&
+    (!endDate.value || day <= endDate.value) &&
+    (selectedActivity.value === 'all' || item.activity === selectedActivity.value)
+}))
+const currentWeekCount = computed(() => {
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7))
+  const end = new Date(start)
+  end.setDate(end.getDate() + 7)
+  return sessions.items.filter((item) => {
+    const date = new Date(item.endedAt)
+    return date >= start && date < end
+  }).length
+})
 
 function exportJson() {
   const blob = new Blob([JSON.stringify(exportData(settings.$state, sessions.items), null, 2)], { type: 'application/json' })
@@ -74,6 +107,7 @@ function clearHistory() {
     <section class="standard-content">
       <p class="eyebrow">Nhìn lại nhẹ nhàng</p>
       <h1>Lịch sử</h1>
+      <p class="week-count">Tuần này bạn đã có {{ currentWeekCount }} buổi.</p>
       <section class="chart-card" aria-label="Thống kê bảy ngày gần nhất">
         <h2>7 ngày gần nhất</h2>
         <div class="week-chart">
@@ -86,21 +120,35 @@ function clearHistory() {
             <span class="chart-average">{{ day.average === null ? '—' : day.average.toFixed(1) }}</span>
           </div>
         </div>
-        <p class="chart-caption">Số phía trên: phiên · số phía dưới: điểm cảm xúc/tập trung trung bình</p>
+        <p class="chart-caption">Số phía trên: phiên nghỉ hoặc thở · số phía dưới: điểm tập trung trung bình</p>
       </section>
 
-      <div class="history-heading"><h2>Các phiên gần đây</h2><span>{{ sessions.items.length }} phiên</span></div>
-      <p v-if="!sessions.items.length" class="empty-state">Chưa có phiên nào được lưu.</p>
+      <div class="history-heading"><h2>Các phiên gần đây</h2><span>{{ filteredSessions.length }} / {{ sessions.items.length }} phiên</span></div>
+      <div class="history-filters">
+        <label>Từ ngày <input v-model="startDate" type="date" aria-label="Lọc từ ngày" /></label>
+        <label>Đến ngày <input v-model="endDate" type="date" aria-label="Lọc đến ngày" /></label>
+        <label>Hoạt động
+          <select v-model="selectedActivity" aria-label="Lọc theo hoạt động">
+            <option value="all">Tất cả hoạt động</option>
+            <option v-for="(label, key) in activityNames" :key="key" :value="key">{{ label }}</option>
+          </select>
+        </label>
+      </div>
+      <p v-if="!filteredSessions.length" class="empty-state">{{ sessions.items.length ? 'Không có phiên nào trong khoảng lọc này.' : 'Chưa có phiên nào được lưu.' }}</p>
       <ul v-else class="session-list">
-        <li v-for="item in sessions.items" :key="item.id" class="history-item">
+        <li v-for="item in filteredSessions" :key="item.id" class="history-item">
           <div>
             <time>{{ new Date(item.endedAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }) }}</time>
-            <p>{{ item.duration }} phút · {{ activityNames[item.activity] || item.activity }} · {{ soundNames[item.sound] || item.sound }}</p>
+            <p v-if="item.kind === 'breathing'">
+              {{ activityNames[item.breathingPattern] || item.breathingPattern }} · {{ item.duration }} phút · {{ item.cyclesCompleted ?? 0 }} nhịp hoàn thành
+            </p>
+            <p v-else>{{ item.duration }} phút · {{ activityNames[item.activity] || item.activity }} · {{ soundLabel(item.sound) }}</p>
             <p v-if="item.emotionBefore || item.emotionAfter || item.focusAfter !== null">
               {{ item.emotionBefore || '—' }} → {{ item.emotionAfter || '—' }} · tập trung {{ item.focusAfter ?? '—' }}/5
             </p>
           </div>
-          <span class="session-score">Rời đi {{ item.leaveCount ?? 0 }} lần</span>
+          <span v-if="item.kind === 'breathing'" class="session-score">Buổi thở</span>
+          <span v-else class="session-score">Rời đi {{ item.leaveCount ?? 0 }} lần</span>
         </li>
       </ul>
       <section class="data-actions">

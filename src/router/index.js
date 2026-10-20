@@ -6,7 +6,10 @@ import HistoryView from '../views/HistoryView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import LandingView from '../views/LandingView.vue'
 import PomodoroView from '../views/PomodoroView.vue'
+import ReportsView from '../views/ReportsView.vue'
+import BreathingView from '../views/BreathingView.vue'
 import { useSessionStore } from '../stores/session'
+import { useBreathingStore } from '../stores/breathing'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -17,15 +20,19 @@ const router = createRouter({
     { path: '/finish', name: 'finish', component: FinishView },
     { path: '/focus', name: 'focus', component: PomodoroView, meta: { fullscreen: true } },
     { path: '/history', name: 'history', component: HistoryView },
+    { path: '/reports', name: 'reports', component: ReportsView },
+    { path: '/breathing', name: 'breathing', component: BreathingView },
     { path: '/settings', name: 'settings', component: SettingsView },
   ],
 })
 
 router.beforeEach((to) => {
   const session = useSessionStore()
+  const breathing = useBreathingStore()
   if (to.name === 'session' && !session.active) return { name: 'home' }
   if (['landing', 'finish'].includes(to.name) && !session.endedAt) return { name: 'home' }
   if (session.active && to.name !== 'session') return { name: 'session' }
+  if (breathing.active && to.name !== 'breathing') return { name: 'breathing' }
 })
 
 export default router

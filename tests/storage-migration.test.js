@@ -55,6 +55,34 @@ test('imports legacy v1 JSON through the same migration', () => {
   assert.equal(migrated.settings.openingBreath, false)
 })
 
+test('migrates v2 settings and sessions to layered audio defaults without losing records', () => {
+  const migrated = importData({
+    schemaVersion: 2,
+    settings: { duration: 10, activity: 'dot', sound: 'rain', volume: 0.17, showTimer: true, theme: 'light', saveData: true, openingBreath: false },
+    sessions: [{
+      id: 'v2-1',
+      endedAt: '2026-10-20T12:00:00.000Z',
+      duration: 9,
+      activity: 'count',
+      sound: 'rain',
+      emotionBefore: 'mệt',
+      emotionAfter: 'bình thản',
+      focusBefore: 2,
+      focusAfter: 4,
+      exitAttempts: 1,
+      leaveCount: 2,
+      note: '',
+      nextTask: 'Viết một dòng',
+    }],
+  })
+
+  assert.equal(migrated.schemaVersion, SCHEMA_VERSION)
+  assert.deepEqual(migrated.settings.soundLayers, [{ type: 'rain', volume: 0.17 }])
+  assert.equal(migrated.sessions[0].id, 'v2-1')
+  assert.equal(migrated.sessions[0].plannedDuration, 9)
+  assert.equal(migrated.sessions[0].completed, false)
+})
+
 test('writes new session fields in the current schema', () => {
   const data = {
     schemaVersion: SCHEMA_VERSION,
@@ -63,6 +91,8 @@ test('writes new session fields in the current schema', () => {
       id: 'new-1',
       endedAt: '2026-10-20T12:00:00.000Z',
       duration: 10,
+      plannedDuration: 10,
+      completed: true,
       activity: 'dot',
       sound: 'brown',
       emotionBefore: 'bồn chồn',
@@ -78,4 +108,59 @@ test('writes new session fields in the current schema', () => {
 
   assert.equal(writeData(data), true)
   assert.deepEqual(readData().sessions[0], data.sessions[0])
+})
+
+test('migrates v3 data to v4 without losing settings or session records', () => {
+  const migrated = importData({
+    schemaVersion: 3,
+    settings: { duration: 15, activity: 'paint', sound: 'rain', volume: 0.2, showTimer: false, theme: 'dark', saveData: true },
+    sessions: [{
+      id: 'v3-1',
+      endedAt: '2026-10-20T12:00:00.000Z',
+      duration: 15,
+      activity: 'paint',
+      sound: 'rain',
+      emotionBefore: null,
+      emotionAfter: null,
+      focusBefore: null,
+      focusAfter: null,
+      exitAttempts: 0,
+      leaveCount: 0,
+    }],
+  })
+
+  assert.equal(migrated.schemaVersion, SCHEMA_VERSION)
+  assert.equal(migrated.settings.duration, 15)
+  assert.equal(migrated.settings.theme, 'dark')
+  assert.equal(migrated.settings.breathingNoticeAcknowledged, false)
+  assert.equal(migrated.sessions[0].id, 'v3-1')
+})
+
+test('stores breathing sessions in the shared history schema', () => {
+  const breathingSession = {
+    id: 'breath-1',
+    endedAt: '2026-10-20T12:00:00.000Z',
+    duration: 3,
+    plannedDuration: 3,
+    completed: true,
+    kind: 'breathing',
+    activity: 'gentle',
+    sound: 'breath-tone',
+    breathingPattern: 'gentle',
+    breathingRhythm: 'inhale:4,exhale:6',
+    cyclesCompleted: 18,
+    elapsedSeconds: 180,
+    emotionBefore: null,
+    emotionAfter: null,
+    focusBefore: null,
+    focusAfter: null,
+    exitAttempts: 0,
+    leaveCount: 0,
+    note: '',
+    nextTask: '',
+  }
+  const data = { schemaVersion: SCHEMA_VERSION, settings: DEFAULT_SETTINGS, sessions: [breathingSession] }
+
+  assert.equal(writeData(data), true)
+  assert.deepEqual(readData().sessions[0], breathingSession)
 })

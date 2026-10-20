@@ -1,21 +1,17 @@
 <script setup>
 import AppHeader from '../components/ui/AppHeader.vue'
+import SoundMixer from '../components/ui/SoundMixer.vue'
+import ReminderManager from '../components/ui/ReminderManager.vue'
 import { useSettingsStore } from '../stores/settings'
 
 const settings = useSettingsStore()
+const durationOptions = [5, 10, 15, 20]
 const activities = [
   { value: 'dot', label: 'Chấm chạy chậm' },
   { value: 'count', label: 'Đếm vô nghĩa' },
   { value: 'lines', label: 'Đường kẻ lặp' },
   { value: 'paint', label: 'Sơn khô' },
   { value: 'typing', label: 'Gõ lặp' },
-]
-const sounds = [
-  { value: 'brown', label: 'Tiếng ồn nâu' },
-  { value: 'white', label: 'Tiếng ồn trắng nhẹ' },
-  { value: 'rain', label: 'Mưa đều' },
-  { value: 'tick', label: 'Tích tắc chậm' },
-  { value: 'silence', label: 'Im lặng' },
 ]
 function update(key, value) {
   settings.update({ [key]: value })
@@ -32,7 +28,7 @@ function update(key, value) {
         <label class="setting-row">
           <span>Thời lượng mặc định</span>
           <select :value="settings.duration" aria-label="Thời lượng mặc định" @change="update('duration', Number($event.target.value))">
-            <option v-for="duration in [5, 10, 15, 20]" :key="duration" :value="duration">{{ duration }} phút</option>
+            <option v-for="duration in [...new Set([...durationOptions, settings.duration])].sort((a, b) => a - b)" :key="duration" :value="duration">{{ duration }} phút</option>
           </select>
         </label>
         <label class="setting-row">
@@ -40,16 +36,6 @@ function update(key, value) {
           <select :value="settings.activity" aria-label="Hoạt động mặc định" @change="update('activity', $event.target.value)">
             <option v-for="item in activities" :key="item.value" :value="item.value">{{ item.label }}</option>
           </select>
-        </label>
-        <label class="setting-row">
-          <span>Âm thanh mặc định</span>
-          <select :value="settings.sound" aria-label="Âm thanh mặc định" @change="update('sound', $event.target.value)">
-            <option v-for="item in sounds" :key="item.value" :value="item.value">{{ item.label }}</option>
-          </select>
-        </label>
-        <label class="setting-row">
-          <span>Âm lượng mặc định <small>{{ Math.round(settings.volume * 100) }}%</small></span>
-          <input :value="settings.volume" aria-label="Âm lượng mặc định" type="range" min="0" max="0.3" step="0.01" @input="update('volume', Number($event.target.value))" />
         </label>
         <label class="setting-row toggle-row">
           <span>Hiện đồng hồ trong phiên</span>
@@ -70,7 +56,23 @@ function update(key, value) {
           <span>Lưu lịch sử trên thiết bị</span>
           <input :checked="settings.saveData" type="checkbox" @change="update('saveData', $event.target.checked)" />
         </label>
+        <label class="setting-row toggle-row">
+          <span>Gợi ý tăng 2 phút sau ba phiên hoàn thành</span>
+          <input :checked="settings.suggestDurationIncrease" type="checkbox" aria-label="Bật gợi ý tăng thời lượng" @change="update('suggestDurationIncrease', $event.target.checked)" />
+        </label>
       </div>
+      <div class="settings-group settings-mix-group"><SoundMixer /></div>
+      <div class="settings-group"><ReminderManager /></div>
+      <section class="settings-group breathing-settings-note">
+        <h2>Lưu ý khi tập thở</h2>
+        <p>Thở nhẹ nhàng, không gắng sức. Nếu thấy chóng mặt, choáng hoặc khó chịu, hãy quay lại thở bình thường. Đây là bài tập thư giãn, không thay thế tư vấn y tế.</p>
+      </section>
+      <section class="settings-group shortcut-help">
+        <h2>Phím tắt</h2>
+        <p><kbd>Space</kbd> bắt đầu ở màn hình chính hoặc tạm dừng/tiếp tục trong phiên.</p>
+        <p><kbd>Esc</kbd> giữ 3 giây để kết thúc phiên.</p>
+        <p><kbd>1</kbd>–<kbd>5</kbd> chọn điểm tập trung ở màn hình đánh giá.</p>
+      </section>
       <p class="settings-note">Cài đặt và lịch sử được lưu trong trình duyệt này. Tắt lưu lịch sử sẽ chỉ ngăn các phiên mới được ghi lại.</p>
     </section>
   </main>

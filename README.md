@@ -33,15 +33,21 @@ Mở địa chỉ Vite hiển thị trong terminal (thường là `http://localh
 - Sau session là một phút đáp xuống với nền dịu, tiếp theo là đánh giá cảm xúc/tập trung và nhật ký tùy chọn.
 - Có thể tiếp tục bằng bộ đếm tập trung 25 phút, kết thúc với một âm thanh Web Audio nhỏ.
 - Lịch sử, biểu đồ tuần, cài đặt sáng/tối, nhập và xuất JSON.
+- Báo cáo tuần, heatmap 26 tuần, biểu đồ SVG khi có ít nhất năm phiên được chấm tập trung; lọc lịch sử theo ngày và hoạt động.
+- Mix tối đa ba lớp âm thanh với âm lượng riêng, tùy chọn im lặng hoàn toàn; mix gần nhất được lưu.
+- Lịch nhắc theo ngày/giờ, thông báo hệ thống nếu được cấp quyền hoặc lời nhắc trong app. Hiển thị số buổi trong tuần, gợi ý tăng thời lượng 2 phút sau ba phiên hoàn thành (nếu bật), và chọn ngẫu nhiên hoạt động/âm thanh.
+- Phím tắt: Space bắt đầu/tạm dừng, giữ Esc 3 giây để kết thúc, phím 1–5 chọn điểm tập trung.
+- Mục **Tập thở** có ba nhịp dẫn chậm; nhịp mặc định 4 giây hít vào, 6 giây thở ra, một lượt làm quen 20 giây và buổi mặc định 3 phút. Âm tông được tạo bằng Web Audio sau khi bấm bắt đầu; buổi thở được ghi chung vào lịch sử.
+- Lưu ý nhẹ nhàng: thở không gắng sức, quay lại nhịp tự nhiên nếu thấy khó chịu. Bài tập thư giãn không thay thế tư vấn y tế.
 - PWA có manifest, icon đơn giản và service worker precache để sử dụng offline sau lần mở đầu tiên; có thông báo nhỏ khi bản mới sẵn sàng.
 - Giao diện responsive, hỗ trợ bàn phím và `prefers-reduced-motion`.
 
 ## Dữ liệu, riêng tư và giới hạn
 
 - Dữ liệu được lưu cục bộ trong localStorage của origin đang mở; restart container không xóa dữ liệu, nhưng đổi trình duyệt/thiết bị hoặc dọn dữ liệu trình duyệt thì không tự đồng bộ. Cài đặt “Không ghi lại dữ liệu” ngăn ghi session mới.
-- Storage dùng `schemaVersion: 2`; khi mở ứng dụng, dữ liệu phiên bản 1 được migrate tại chỗ. Chạy `npm test` để xác minh dữ liệu cũ và trường mới. Tệp JSON phiên bản 1 cũng được migrate khi nhập.
+- Storage dùng `schemaVersion: 4`; khi mở ứng dụng, dữ liệu phiên bản 1, 2 và 3 được migrate tại chỗ, giữ cài đặt/phiên cũ. Chạy `npm test` để xác minh. Tệp JSON phiên bản 1, 2 và 3 cũng được migrate khi nhập.
 - Dùng **Lịch sử → Xuất JSON** để sao lưu định kỳ và trước khi nhập tệp khác. Nhập sẽ thay thế cài đặt và lịch sử hiện tại; ứng dụng không gửi dữ liệu tới máy chủ.
-- Ứng dụng hiện chưa có lịch nhắc. Khi có nhắc bằng Notification API ở phiên bản tương lai, trình duyệt chỉ có thể gửi khi ứng dụng/PWA đang chạy; do không có backend hay dịch vụ push nên không thể nhắc khi ứng dụng hoàn toàn đã đóng.
+- Lời nhắc được kiểm tra khi ứng dụng đang chạy. Notification API có thể hiện thông báo hệ thống khi được cấp quyền; nếu không, nhắc trong giao diện. Trình duyệt không thể nhắc khi ứng dụng/PWA hoàn toàn đã đóng vì không có backend hoặc dịch vụ push.
 - Cài PWA cần mở qua `localhost` hoặc HTTPS. Tính năng offline có hiệu lực sau lần tải đầy đủ đầu tiên.
 - Hít thở mở đầu mặc định tắt; các thẻ cảm xúc, điểm và nhật ký đều không bắt buộc. Thoát sớm không bị phạt.
 
@@ -51,8 +57,10 @@ Mở địa chỉ Vite hiển thị trong terminal (thường là `http://localh
 src/
   components/
     activities/       # Năm hoạt động riêng biệt
+    breathing/        # Hình ảnh dẫn nhịp thở
     ui/               # Picker, header và thành phần dùng chung
-  composables/         # Timer, âm thanh, Wake Lock, PWA update
+  composables/         # Timer, âm thanh, Wake Lock, PWA update và engine thở
+  data/breathingPatterns.js # Cấu hình các bài thở
   router/              # Điều hướng Vue Router
   services/storage.js  # localStorage, schema/migrate, nhập/xuất JSON
   stores/              # Pinia: cài đặt, lịch sử, session hiện tại
@@ -73,6 +81,10 @@ nginx.conf
 2. Thêm mã và nhãn hoạt động ở `src/views/HomeView.vue`, map component trong `src/views/SessionView.vue`, và nhãn lịch sử trong `src/views/HistoryView.vue`.
 3. Cho phép mã hoạt động mới trong `normalizeSettings` tại `src/services/storage.js`.
 4. Chạy `npm test` và `npm run build`.
+
+## Thêm bài thở
+
+Thêm một object vào `BREATHING_PATTERNS` trong `src/data/breathingPatterns.js`, gồm `id`, `name`, `description`, `recommendation` và danh sách `phases` (`id`, `label`, `seconds`). Mỗi pha hiện cần nằm trong 1–12 giây; nên giữ nhịp tự nhiên và tránh yêu cầu gắng sức. Pha giữ hơi không bắt buộc và người tập luôn có thể dừng hoặc quay về thở bình thường.
 
 ## Chuẩn bị thêm ngôn ngữ
 
