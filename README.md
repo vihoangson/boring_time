@@ -41,7 +41,7 @@ Mở địa chỉ Vite hiển thị trong terminal (thường là `http://localh
 - Lưu ý nhẹ nhàng: thở không gắng sức, quay lại nhịp tự nhiên nếu thấy khó chịu. Bài tập thư giãn không thay thế tư vấn y tế.
 - PWA có manifest, icon đơn giản và service worker precache để sử dụng offline sau lần mở đầu tiên; có thông báo nhỏ khi bản mới sẵn sàng.
 - Giao diện responsive, hỗ trợ bàn phím và `prefers-reduced-motion`.
-- Mục **Giảm kích thích / Reset tập trung**: thẻ ghi nhanh thôi thúc, khoảng trì hoãn 5/10/20 phút có nhịp thở nhẹ và ambient tùy chọn, nhật ký/biểu đồ theo giờ và cảm xúc, bản đồ thói quen, kế hoạch nếu–thì và hoạt động thay thế.
+- Mục **Giảm kích thích / Reset tập trung**: nút ghi nhanh luôn có sẵn trên màn hình, khoảng trì hoãn 5/10/20 phút có nhịp thở nhẹ và ambient tùy chọn, nhật ký/biểu đồ theo giờ và cảm xúc, bản đồ thói quen, kế hoạch nếu–thì và hoạt động thay thế. Bộ đếm Tập thở/Pomodoro/session đang mở được tạm dừng trong lớp phủ rồi tiếp tục khi đóng.
 - Cho phép tự thêm/sửa/xóa thói quen và hoạt động, đánh giá mức ảnh hưởng, đặt tối đa năm kế hoạch. Không có điểm thưởng hay nhãn thất bại.
 
 ## Dữ liệu, riêng tư và giới hạn

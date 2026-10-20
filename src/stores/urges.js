@@ -7,11 +7,10 @@ function createId(prefix) {
 }
 
 export const useUrgesStore = defineStore('urges', {
-  state: () => ({
-    ...readData().reset,
-    activeDelay: readData().reset.activeDelay || null,
-    delayRemainingMs: 0,
-  }),
+  state: () => {
+    const reset = readData().reset
+    return { ...reset, activeDelay: reset.activeDelay || null, delayRemainingMs: 0 }
+  },
   getters: {
     currentWeekCount: (state) => {
       const start = new Date()

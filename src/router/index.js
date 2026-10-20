@@ -24,6 +24,7 @@ const router = createRouter({
     { path: '/reports', name: 'reports', component: ReportsView },
     { path: '/breathing', name: 'breathing', component: BreathingView },
     { path: '/reset', name: 'reset', component: ResetView },
+    { path: '/reset/delay', name: 'urge-delay', redirect: { name: 'reset' } },
     { path: '/settings', name: 'settings', component: SettingsView },
   ],
 })

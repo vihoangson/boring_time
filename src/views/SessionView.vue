@@ -92,6 +92,10 @@ function onVisibility() {
     departureRecorded = false
     return
   }
+  if (document.visibilityState === 'hidden' && session.active && pausedForUrge) {
+    recordDeparture()
+    return
+  }
   if (document.visibilityState === 'hidden' && session.active && !session.paused) {
     recordDeparture()
     pausedByVisibility.value = true

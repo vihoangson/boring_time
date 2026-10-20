@@ -38,25 +38,25 @@ onMounted(() => {
 
 <template>
   <div class="app-shell" :class="{ 'session-shell': route.name === 'session' }">
-    <aside v-if="updateAvailable" class="update-toast" role="status">
-      Có phiên bản mới. <button type="button" aria-label="Tải lại để cập nhật Boring Time" @click="applyUpdate">Tải lại để cập nhật</button>
-    </aside>
-    <aside v-if="inAppReminder" class="reminder-toast" role="status">
-      <span>{{ inAppReminder }}</span>
-      <RouterLink to="/">Bắt đầu</RouterLink>
-      <button type="button" aria-label="Đóng lời nhắc" @click="inAppReminder = ''">Đóng</button>
-    </aside>
-    <UrgeQuickCard v-if="quickCardOpen && showUrgeShortcut" @close="quickCardOpen = false" />
-    <button
-      v-if="showUrgeShortcut"
-      ref="urgeButton"
-      class="urge-floating-button"
-      type="button"
-      aria-label="Tôi đang muốn… Ghi nhận một thôi thúc"
-      :aria-expanded="quickCardOpen"
-      @click="quickCardOpen = !quickCardOpen"
-    >Tôi đang muốn…</button>
     <div :inert="Boolean(urges.activeDelay)" :aria-hidden="Boolean(urges.activeDelay)">
+      <aside v-if="updateAvailable" class="update-toast" role="status">
+        Có phiên bản mới. <button type="button" aria-label="Tải lại để cập nhật Boring Time" @click="applyUpdate">Tải lại để cập nhật</button>
+      </aside>
+      <aside v-if="inAppReminder" class="reminder-toast" role="status">
+        <span>{{ inAppReminder }}</span>
+        <RouterLink to="/">Bắt đầu</RouterLink>
+        <button type="button" aria-label="Đóng lời nhắc" @click="inAppReminder = ''">Đóng</button>
+      </aside>
+      <UrgeQuickCard v-if="quickCardOpen && showUrgeShortcut" @close="quickCardOpen = false" />
+      <button
+        v-if="showUrgeShortcut"
+        ref="urgeButton"
+        class="urge-floating-button"
+        type="button"
+        aria-label="Tôi đang muốn… Ghi nhận một thôi thúc"
+        :aria-expanded="quickCardOpen"
+        @click="quickCardOpen = !quickCardOpen"
+      >Tôi đang muốn…</button>
       <RouterView />
     </div>
     <UrgeDelayView v-if="urges.activeDelay" />
