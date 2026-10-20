@@ -1,20 +1,16 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import AppHeader from '../components/ui/AppHeader.vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import BreathVisual from '../components/breathing/BreathVisual.vue'
 import AlternativeMenu from '../components/urge/AlternativeMenu.vue'
 import { useAudio } from '../composables/useAudio'
-import { useSessionStore } from '../stores/session'
 import { useUrgesStore } from '../stores/urges'
 
 const urges = useUrgesStore()
-const session = useSessionStore()
-const router = useRouter()
 const now = ref(Date.now())
 const showOutcome = ref(false)
 const audioEnabled = ref(false)
 const audioNotice = ref('')
+const dialogTitle = ref(null)
 const selectedOutcome = ref('')
 const selectedDecision = ref('')
 const { start: startAudio, stop: stopAudio } = useAudio()
@@ -60,31 +56,25 @@ async function toggleAmbient() {
 
 function saveOutcome() {
   if (!selectedOutcome.value || !selectedDecision.value) return
-  const returnRoute = urges.returnRoute
   urges.finishDelay(selectedOutcome.value, selectedDecision.value)
   showOutcome.value = false
-  returnFromDelay(returnRoute)
+  returnFromDelay()
 }
 
 function exitEarly() {
-  const returnRoute = urges.returnRoute
   urges.exitDelayEarly()
   showOutcome.value = false
-  returnFromDelay(returnRoute)
+  returnFromDelay()
 }
 
-function returnFromDelay(returnRoute) {
-  if (session.active && returnRoute === '/session') session.resume()
-  router.replace(returnRoute || { name: 'reset' })
+function returnFromDelay() {
+  window.dispatchEvent(new Event('boring-time:urge-end'))
 }
 
 onMounted(() => {
-  if (!activeDelay.value) {
-    router.replace({ name: 'reset' })
-    return
-  }
   updateTimer()
   timer = window.setInterval(updateTimer, 250)
+  nextTick(() => dialogTitle.value?.focus())
 })
 onUnmounted(() => {
   window.clearInterval(timer)
@@ -93,12 +83,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="page delay-page">
-    <AppHeader title="Khoảng trì hoãn" />
+  <main class="urge-delay-overlay delay-page" role="dialog" aria-modal="true" aria-labelledby="delay-title">
     <section class="standard-content delay-content">
       <p class="eyebrow">Không cần chống lại cảm giác</p>
       <template v-if="!showOutcome">
-        <h1>Quan sát trong giây lát.</h1>
+        <h1 id="delay-title" ref="dialogTitle" tabindex="-1">Quan sát trong giây lát.</h1>
         <p class="intro-copy">Bạn muốn {{ activeDelay?.habitName }} khi cảm thấy {{ activeDelay?.emotion.toLowerCase() }}.</p>
         <div v-if="matchingPlan" class="matching-plan" role="status"><strong>Nếu</strong> {{ matchingPlan.situation }}, <strong>thì</strong> {{ matchingPlan.action }}</div>
         <BreathVisual :phase="isInhale ? 'inhale' : 'exhale'" :progress="phaseProgress" />
@@ -112,7 +101,7 @@ onUnmounted(() => {
         <p v-if="audioNotice" class="muted-note" role="status">{{ audioNotice }}</p>
       </template>
       <template v-else>
-        <h1>Bây giờ bạn thấy thế nào?</h1>
+        <h1 id="delay-title" ref="dialogTitle" tabindex="-1">Bây giờ bạn thấy thế nào?</h1>
         <p class="intro-copy">Không có lựa chọn đúng hay sai.</p>
         <fieldset class="urge-choice-group">
           <legend>Cơn muốn</legend>

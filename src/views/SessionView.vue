@@ -25,6 +25,7 @@ let exitInterval
 let holdStartedAt = 0
 let departureRecorded = false
 let completing = false
+let pausedForUrge = false
 const activities = { dot: DotActivity, count: CountActivity, lines: LinesActivity, paint: PaintActivity, typing: TypingActivity }
 const activityComponent = computed(() => activities[session.activity] || DotActivity)
 const formattedTime = computed(() => {
@@ -62,6 +63,17 @@ async function resume() {
   } catch (error) {
     console.warn('Âm thanh không thể tiếp tục trên trình duyệt này.', error)
   }
+}
+function pauseForUrge() {
+  if (!session.active || session.paused) return
+  pausedForUrge = true
+  pausedByVisibility.value = false
+  pause()
+}
+function resumeAfterUrge() {
+  if (!pausedForUrge) return
+  pausedForUrge = false
+  resume()
 }
 async function exitEarly() {
   cancelExitHold()
@@ -140,6 +152,8 @@ onMounted(async () => {
   window.addEventListener('keydown', onKeyDown, true)
   window.addEventListener('keyup', onKeyUp)
   window.addEventListener('beforeunload', beforeUnload)
+  window.addEventListener('boring-time:urge-start', pauseForUrge)
+  window.addEventListener('boring-time:urge-end', resumeAfterUrge)
   try {
     if (!session.paused) {
       await startAudio(session.soundLayers)
@@ -156,6 +170,8 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown, true)
   window.removeEventListener('keyup', onKeyUp)
   window.removeEventListener('beforeunload', beforeUnload)
+  window.removeEventListener('boring-time:urge-start', pauseForUrge)
+  window.removeEventListener('boring-time:urge-end', resumeAfterUrge)
   window.clearTimeout(exitTimer)
   window.clearInterval(exitInterval)
 })

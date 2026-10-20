@@ -342,6 +342,9 @@ kbd { padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px; backg
 .urge-insight { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .reset-support-note { color: var(--muted); font-size: 12px; line-height: 1.65; }
 .delay-content { max-width: 620px; text-align: center; }
+.urge-delay-overlay { position: fixed; z-index: 40; inset: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); }
+.urge-delay-overlay .standard-content { padding-top: clamp(42px, 9vh, 92px); }
+.urge-delay-overlay h1:focus { outline: none; }
 .delay-content .breath-visual { width: min(52vw, 230px); }
 .delay-content .intro-copy { font-size: 14px; }
 .matching-plan { margin: 15px auto; padding: 12px 15px; border-left: 2px solid var(--accent); background: var(--surface); color: var(--muted); font-size: 12px; line-height: 1.6; text-align: left; }

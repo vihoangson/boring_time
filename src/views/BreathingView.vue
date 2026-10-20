@@ -18,6 +18,7 @@ const showSummary = ref(false)
 const hiddenPause = ref(false)
 const audioNotice = ref('')
 const summary = ref({ completed: false, elapsedSeconds: 0, cyclesCompleted: 0 })
+let pausedForUrge = false
 const pattern = computed(() => getBreathingPattern(breathing.selectedPattern))
 const nextPattern = computed(() => ({
   gentle: getBreathingPattern('coherent'),
@@ -115,6 +116,16 @@ function finishBreathing() {
 function onVisibilityChange() {
   if (document.visibilityState === 'hidden') pauseBreathing(true)
 }
+function pauseForUrge() {
+  if (!engine.running.value || engine.paused.value) return
+  pausedForUrge = true
+  pauseBreathing()
+}
+function resumeAfterUrge() {
+  if (!pausedForUrge) return
+  pausedForUrge = false
+  resumeBreathing()
+}
 
 function choosePattern(patternId) {
   breathing.selectPattern(patternId)
@@ -126,9 +137,15 @@ function acknowledgeNotice() {
   breathing.acknowledgeHealthNotice()
 }
 
-onMounted(() => document.addEventListener('visibilitychange', onVisibilityChange))
+onMounted(() => {
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  window.addEventListener('boring-time:urge-start', pauseForUrge)
+  window.addEventListener('boring-time:urge-end', resumeAfterUrge)
+})
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  window.removeEventListener('boring-time:urge-start', pauseForUrge)
+  window.removeEventListener('boring-time:urge-end', resumeAfterUrge)
   if (engine.running.value) {
     breathing.setActive(false)
     audio.stop().catch((error) => console.warn('Không thể đóng âm thanh hướng dẫn thở.', error))

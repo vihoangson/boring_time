@@ -9,10 +9,8 @@ import PomodoroView from '../views/PomodoroView.vue'
 import ReportsView from '../views/ReportsView.vue'
 import BreathingView from '../views/BreathingView.vue'
 import ResetView from '../views/ResetView.vue'
-import UrgeDelayView from '../views/UrgeDelayView.vue'
 import { useSessionStore } from '../stores/session'
 import { useBreathingStore } from '../stores/breathing'
-import { useUrgesStore } from '../stores/urges'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -26,7 +24,6 @@ const router = createRouter({
     { path: '/reports', name: 'reports', component: ReportsView },
     { path: '/breathing', name: 'breathing', component: BreathingView },
     { path: '/reset', name: 'reset', component: ResetView },
-    { path: '/reset/delay', name: 'urge-delay', component: UrgeDelayView, meta: { fullscreen: true } },
     { path: '/settings', name: 'settings', component: SettingsView },
   ],
 })
@@ -34,13 +31,10 @@ const router = createRouter({
 router.beforeEach((to) => {
   const session = useSessionStore()
   const breathing = useBreathingStore()
-  const urges = useUrgesStore()
   if (to.name === 'session' && !session.active) return { name: 'home' }
   if (['landing', 'finish'].includes(to.name) && !session.endedAt) return { name: 'home' }
-  if (session.active && to.name !== 'session' && !(to.name === 'urge-delay' && urges.returnRoute === '/session')) return { name: 'session' }
+  if (session.active && to.name !== 'session') return { name: 'session' }
   if (breathing.active && to.name !== 'breathing') return { name: 'breathing' }
-  if (urges.activeDelay && to.name !== 'urge-delay') return { name: 'urge-delay' }
-  if (to.name === 'urge-delay' && !urges.activeDelay) return { name: 'reset' }
 })
 
 export default router
