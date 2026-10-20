@@ -34,7 +34,6 @@ export function useBreathingEngine() {
   const remainingSeconds = ref(INTRO_PHASES[0].seconds)
   const elapsedSeconds = ref(0)
   const cyclesCompleted = ref(0)
-  const clock = ref(0)
   let timer
   let startedAt = 0
   let accumulatedMs = 0
@@ -47,7 +46,6 @@ export function useBreathingEngine() {
   function update(now = performance.now()) {
     if (!running.value || paused.value) return
     const elapsedMs = accumulatedMs + now - startedAt
-    clock.value = now
     elapsedSeconds.value = Math.floor(elapsedMs / 1000)
 
     if (elapsedMs < INTRO_DURATION_MS) {
@@ -148,7 +146,6 @@ export function useBreathingEngine() {
     remainingSeconds,
     elapsedSeconds,
     cyclesCompleted,
-    clock,
     start,
     pause,
     resume,

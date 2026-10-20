@@ -164,7 +164,6 @@ onUnmounted(() => {
         </p>
         <BreathVisual
           :phase="engine.phase.value.id"
-          :phase-seconds="engine.phase.value.seconds"
           :progress="engine.progress.value"
           :is-intro="engine.isIntro.value"
         />
@@ -180,7 +179,7 @@ onUnmounted(() => {
       </div>
 
       <section v-else-if="showSummary" class="breathing-summary" role="status">
-        <BreathVisual phase="exhale" :phase-seconds="6" :progress="0" />
+        <BreathVisual phase="exhale" :progress="1" />
         <h2>{{ summary.completed ? 'Buổi thở đã kết thúc.' : 'Bạn đã dừng lại.' }}</h2>
         <p>{{ summary.cyclesCompleted }} nhịp hoàn thành · {{ Math.round(summary.elapsedSeconds / 60 * 10) / 10 }} phút</p>
         <p v-if="audioNotice" role="status">{{ audioNotice }}</p>
@@ -192,7 +191,7 @@ onUnmounted(() => {
       </section>
 
       <template v-else>
-        <BreathVisual phase="inhale" :phase-seconds="4" :progress="0" />
+        <BreathVisual phase="inhale" :progress="0" />
         <button class="primary-button breathing-start" type="button" aria-label="Bắt đầu thở nhẹ nhàng trong ba phút" @click="startBreathing">
           Bắt đầu thở
         </button>
