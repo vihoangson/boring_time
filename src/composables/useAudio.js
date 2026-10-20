@@ -30,7 +30,7 @@ export function useAudio() {
         envelope.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume * 0.22), context.currentTime + 0.015)
         envelope.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.11)
         oscillator.connect(envelope)
-        envelope.connect(context.destination)
+        envelope.connect(master)
         oscillator.start()
         oscillator.stop(context.currentTime + 0.12)
       }

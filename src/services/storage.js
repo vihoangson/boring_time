@@ -29,7 +29,7 @@ function normalizeSettings(value) {
     activity: ['dot', 'count', 'lines', 'paint', 'typing'].includes(value.activity) ? value.activity : DEFAULT_SETTINGS.activity,
     sound: ['brown', 'white', 'rain', 'tick', 'silence'].includes(value.sound) ? value.sound : DEFAULT_SETTINGS.sound,
     volume: typeof value.volume === 'number' && Number.isFinite(value.volume)
-      ? Math.min(0.5, Math.max(0, value.volume))
+      ? Math.min(0.3, Math.max(0, value.volume))
       : DEFAULT_SETTINGS.volume,
     showTimer: typeof value.showTimer === 'boolean' ? value.showTimer : DEFAULT_SETTINGS.showTimer,
     theme: ['light', 'dark'].includes(value.theme) ? value.theme : DEFAULT_SETTINGS.theme,
@@ -60,7 +60,10 @@ export function readData() {
 
 export function writeData(data) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeData(data)))
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(normalizeData({ ...data, schemaVersion: SCHEMA_VERSION })),
+    )
     return true
   } catch (error) {
     console.error('Không thể lưu dữ liệu Boring Time vào localStorage.', error)

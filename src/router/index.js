@@ -20,6 +20,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const session = useSessionStore()
   if (to.name === 'session' && !session.active) return { name: 'home' }
+  if (to.name === 'finish' && !session.endedAt) return { name: 'home' }
   if (session.active && to.name !== 'session' && to.name !== 'finish') return { name: 'session' }
 })
 

@@ -20,6 +20,7 @@ const pausedByVisibility = ref(false)
 const audioReady = ref(false)
 const escapeHeld = ref(false)
 const escapeProgress = ref(false)
+const finishing = ref(false)
 let escapeTimer
 let completing = false
 const activities = { dot: DotActivity, count: CountActivity, lines: LinesActivity, paint: PaintActivity, typing: TypingActivity }
@@ -33,6 +34,7 @@ useWakeLock(computed(() => session.active && !session.paused))
 async function finishSession() {
   if (completing) return
   completing = true
+  finishing.value = true
   await stopAudio()
   session.finish()
   router.replace('/finish')
@@ -99,7 +101,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="session-view" :class="`activity-${session.activity}`">
+  <main class="session-view" :class="[`activity-${session.activity}`, { 'is-finishing': finishing }]">
     <component :is="activityComponent" />
     <time v-if="settings.showTimer" class="session-timer" aria-live="off">{{ formattedTime }}</time>
     <button class="exit-button" type="button" aria-label="Kết thúc phiên" @click="exitEarly">Thoát</button>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '../components/ui/AppHeader.vue'
 import { useSettingsStore } from '../stores/settings'
@@ -24,8 +24,6 @@ const sounds = [
   { id: 'silence', name: 'Im lặng' },
 ]
 const volumeLabel = computed(() => `${Math.round(settings.volume * 100)}%`)
-const audioMessage = ref('')
-
 function start() {
   session.start(settings.$state)
   router.push('/session')
@@ -97,7 +95,6 @@ function start() {
           />
         </label>
       </div>
-      <p v-if="audioMessage" class="muted-note" role="status">{{ audioMessage }}</p>
       <button class="primary-button start-button" type="button" aria-label="Bắt đầu phiên nghỉ" @click="start">Bắt đầu</button>
       <p class="quiet-note">Không có mục tiêu nào cần đạt.</p>
     </section>

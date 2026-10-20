@@ -4,6 +4,35 @@ import vue from '@vitejs/plugin-vue'
 function offlinePrecache() {
   return {
     name: 'offline-precache',
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split('?')[0] !== '/service-worker.js') return next()
+        response.setHeader('Content-Type', 'text/javascript; charset=utf-8')
+        response.end(`
+const CACHE = 'boring-time-dev';
+self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/','/index.html'])).then(() => self.skipWaiting())));
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(new URL(event.request.url).pathname);
+    if (cached) return cached;
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) await cache.put(new URL(event.request.url).pathname, response.clone());
+      return response;
+    } catch (error) {
+      if (event.request.mode === 'navigate') {
+        const appShell = await cache.match('/index.html');
+        if (appShell) return appShell;
+      }
+      throw error;
+    }
+  })());
+});`)
+      })
+    },
     generateBundle(_, bundle) {
       const assets = Object.keys(bundle)
         .filter((file) => file !== 'service-worker.js')
@@ -19,10 +48,22 @@ self.addEventListener('activate', (event) => {
 });
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-    if (response.ok) caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
-    return response;
-  }).catch(() => event.request.mode === 'navigate' ? caches.match('/index.html') : Promise.reject(new Error('Không có nội dung ngoại tuyến')))));
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(new URL(event.request.url).pathname);
+    if (cached) return cached;
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) await cache.put(new URL(event.request.url).pathname, response.clone());
+      return response;
+    } catch (error) {
+      if (event.request.mode === 'navigate') {
+        const appShell = await cache.match('/index.html');
+        if (appShell) return appShell;
+      }
+      throw error;
+    }
+  })());
 });`
       this.emitFile({ type: 'asset', fileName: 'service-worker.js', source: worker })
     },

@@ -19,7 +19,7 @@ const durationMinutes = computed(() => Math.max(1, Math.round(session.elapsedSec
 function save(rated = true) {
   if (saved.value) return
   sessions.add({
-    id: crypto.randomUUID(),
+    id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     endedAt: session.endedAt || new Date().toISOString(),
     duration: durationMinutes.value,
     activity: session.activity,

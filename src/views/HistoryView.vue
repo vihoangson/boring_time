@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import AppHeader from '../components/ui/AppHeader.vue'
-import { exportData, importData } from '../services/storage'
+import { clearData, DEFAULT_SETTINGS, exportData, importData } from '../services/storage'
 import { useSessionsStore } from '../stores/sessions'
 import { useSettingsStore } from '../stores/settings'
 
@@ -58,7 +58,12 @@ async function importJson(event) {
 }
 function clearHistory() {
   if (!window.confirm('Xóa toàn bộ lịch sử và dữ liệu đã lưu trên thiết bị này?')) return
-  sessions.clear()
+  if (!clearData()) {
+    notice.value = 'Không thể xóa dữ liệu khỏi bộ nhớ trình duyệt.'
+    return
+  }
+  settings.$patch({ ...DEFAULT_SETTINGS })
+  sessions.items = []
   notice.value = 'Dữ liệu đã được xóa.'
 }
 </script>
@@ -97,7 +102,7 @@ function clearHistory() {
       </ul>
       <section class="data-actions">
         <h2>Dữ liệu trên thiết bị</h2>
-        <p>Xuất hoặc nhập tệp JSON để sao lưu và chuyển dữ liệu. Không có dữ liệu nào được gửi đi.</p>
+        <p>Xuất JSON để sao lưu. Nhập JSON sẽ thay thế cài đặt và lịch sử hiện có. Không có dữ liệu nào được gửi đi.</p>
         <div class="button-row">
           <button class="secondary-button" type="button" @click="exportJson">Xuất JSON</button>
           <button class="secondary-button" type="button" @click="fileInput?.click()">Nhập JSON</button>

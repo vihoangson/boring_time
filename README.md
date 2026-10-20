@@ -32,6 +32,7 @@ Mở địa chỉ Vite hiển thị trong terminal (thường là `http://localh
 - Khi tab bị ẩn, session và âm thanh tạm dừng; cần bấm tiếp tục khi quay lại. Esc cần được giữ đủ hai giây để thoát; nút Thoát ở góc là lối thoát tức thời.
 - Service worker precache giao diện và các tệp build để có thể mở ứng dụng ngoại tuyến sau lần tải đầu tiên. Mở qua `localhost`/HTTPS để trình duyệt cho phép service worker.
 - Dữ liệu có `schemaVersion` và được kiểm tra khi đọc/nhập. Nếu dữ liệu localStorage hỏng, ứng dụng bắt đầu với cấu hình mặc định; trình duyệt có thể từ chối lưu khi ở chế độ riêng tư hoặc hết dung lượng.
+- Nhập JSON thay thế toàn bộ cài đặt và lịch sử hiện có; hãy xuất dữ liệu trước nếu cần giữ bản cũ.
 - Cài đặt “Không ghi lại dữ liệu” ngăn lưu các phiên mới nhưng không xóa lịch sử trước đó. Xóa dữ liệu/xóa lịch sử là thao tác riêng.
 - Các điểm cảm xúc và tập trung là tùy chọn; bỏ qua lưu phiên với hai điểm rỗng. Biểu đồ cho thấy số phiên và điểm trung bình trong bảy ngày gần nhất.
 
