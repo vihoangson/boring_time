@@ -1,61 +1,77 @@
 # Boring Time
 
-Boring Time là ứng dụng web tiếng Việt giúp chủ động dành một khoảng thời gian yên tĩnh, ít kích thích để nghỉ ngơi và quay lại với công việc. Ứng dụng không có backend; cài đặt và lịch sử chỉ được lưu trong `localStorage` của trình duyệt hiện tại.
+Boring Time là ứng dụng web tiếng Việt giúp chủ động dành một khoảng lặng ít kích thích, sau đó nhẹ nhàng trở lại với việc định làm. Ứng dụng không có backend hay database: cài đặt và nhật ký phiên chỉ nằm trong `localStorage` trên thiết bị/trình duyệt hiện tại.
 
 ## Chạy bằng Docker
 
-Cài Docker Desktop (có Docker Compose), sau đó chạy tại thư mục dự án:
+Cần Docker Desktop có Docker Compose:
 
 ```bash
 docker compose up --build
 ```
 
-Mở [http://localhost:8080](http://localhost:8080). Dừng ứng dụng bằng `Ctrl+C`; có thể chạy nền với `docker compose up --build -d`, rồi dừng bằng `docker compose down`.
-
-Dữ liệu nằm trong trình duyệt, không nằm trong container, vì vậy vẫn còn sau khi container khởi động lại miễn là dùng cùng trình duyệt và cùng origin. Dùng Xuất JSON để sao lưu hoặc chuyển dữ liệu.
+Mở [http://localhost:8080](http://localhost:8080). Dừng ứng dụng bằng `Ctrl+C`; để chạy nền dùng `docker compose up --build -d`, rồi `docker compose down`.
 
 ## Chạy phát triển
 
-Cần Node.js 20 LTS.
+Cần Node.js 20 LTS:
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Mở địa chỉ Vite hiển thị trong terminal (thường là `http://localhost:5173`). Kiểm tra build production bằng `npm run build`; xem bản build bằng `npm run preview`.
+Mở địa chỉ Vite hiển thị trong terminal (thường là `http://localhost:5173`). Chạy `npm test` để kiểm tra migrate dữ liệu và `npm run build` để tạo bản production.
 
-## Tính năng và giả định
+## Tính năng hiện có
 
-- Chọn 5, 10, 15 hoặc 20 phút, một trong năm hoạt động chậm và một trong năm lựa chọn âm thanh.
-- Âm thanh được tạo bằng Web Audio API; trình duyệt chỉ khởi tạo âm thanh sau thao tác Bắt đầu. Nếu trình duyệt không hỗ trợ âm thanh, session vẫn chạy bình thường.
-- Khi tab bị ẩn, session và âm thanh tạm dừng; cần bấm tiếp tục khi quay lại. Esc cần được giữ đủ hai giây để thoát; nút Thoát ở góc là lối thoát tức thời.
-- Service worker precache giao diện và các tệp build để có thể mở ứng dụng ngoại tuyến sau lần tải đầu tiên. Mở qua `localhost`/HTTPS để trình duyệt cho phép service worker.
-- Dữ liệu có `schemaVersion` và được kiểm tra khi đọc/nhập. Nếu dữ liệu localStorage hỏng, ứng dụng bắt đầu với cấu hình mặc định; trình duyệt có thể từ chối lưu khi ở chế độ riêng tư hoặc hết dung lượng.
-- Nhập JSON thay thế toàn bộ cài đặt và lịch sử hiện có; hãy xuất dữ liệu trước nếu cần giữ bản cũ.
-- Cài đặt “Không ghi lại dữ liệu” ngăn lưu các phiên mới nhưng không xóa lịch sử trước đó. Xóa dữ liệu/xóa lịch sử là thao tác riêng.
-- Các điểm cảm xúc và tập trung là tùy chọn; bỏ qua lưu phiên với hai điểm rỗng. Biểu đồ cho thấy số phiên và điểm trung bình trong bảy ngày gần nhất.
+- Chọn thời lượng, một trong năm hoạt động chậm, âm thanh Web Audio và âm lượng nhỏ.
+- Có thể nhập việc định làm và ghi nhận cảm xúc/tập trung trước phiên; tùy chọn hít thở mở đầu 30 giây.
+- Tab ẩn sẽ tạm dừng phiên; mất focus và ý định thoát được ghi nhận trung tính. Giữ Esc hoặc nút Thoát ba giây mới kết thúc.
+- Sau session là một phút đáp xuống với nền dịu, tiếp theo là đánh giá cảm xúc/tập trung và nhật ký tùy chọn.
+- Có thể tiếp tục bằng bộ đếm tập trung 25 phút, kết thúc với một âm thanh Web Audio nhỏ.
+- Lịch sử, biểu đồ tuần, cài đặt sáng/tối, nhập và xuất JSON.
+- PWA có manifest, icon đơn giản và service worker precache để sử dụng offline sau lần mở đầu tiên; có thông báo nhỏ khi bản mới sẵn sàng.
+- Giao diện responsive, hỗ trợ bàn phím và `prefers-reduced-motion`.
+
+## Dữ liệu, riêng tư và giới hạn
+
+- Dữ liệu được lưu cục bộ trong localStorage của origin đang mở; restart container không xóa dữ liệu, nhưng đổi trình duyệt/thiết bị hoặc dọn dữ liệu trình duyệt thì không tự đồng bộ. Cài đặt “Không ghi lại dữ liệu” ngăn ghi session mới.
+- Storage dùng `schemaVersion: 2`; khi mở ứng dụng, dữ liệu phiên bản 1 được migrate tại chỗ. Chạy `npm test` để xác minh dữ liệu cũ và trường mới. Tệp JSON phiên bản 1 cũng được migrate khi nhập.
+- Dùng **Lịch sử → Xuất JSON** để sao lưu định kỳ và trước khi nhập tệp khác. Nhập sẽ thay thế cài đặt và lịch sử hiện tại; ứng dụng không gửi dữ liệu tới máy chủ.
+- Ứng dụng hiện chưa có lịch nhắc. Khi có nhắc bằng Notification API ở phiên bản tương lai, trình duyệt chỉ có thể gửi khi ứng dụng/PWA đang chạy; do không có backend hay dịch vụ push nên không thể nhắc khi ứng dụng hoàn toàn đã đóng.
+- Cài PWA cần mở qua `localhost` hoặc HTTPS. Tính năng offline có hiệu lực sau lần tải đầy đủ đầu tiên.
+- Hít thở mở đầu mặc định tắt; các thẻ cảm xúc, điểm và nhật ký đều không bắt buộc. Thoát sớm không bị phạt.
 
 ## Cấu trúc
 
 ```text
 src/
   components/
-    activities/       # Năm hoạt động có thể hoán đổi
-    ui/               # Thành phần giao diện dùng chung
-  composables/         # Timer, âm thanh, Wake Lock
+    activities/       # Năm hoạt động riêng biệt
+    ui/               # Picker, header và thành phần dùng chung
+  composables/         # Timer, âm thanh, Wake Lock, PWA update
   router/              # Điều hướng Vue Router
-  services/storage.js  # localStorage, schema và nhập/xuất JSON
-  stores/              # Pinia: cài đặt, lịch sử, phiên hiện tại
-  views/               # Bắt đầu, phiên, hoàn tất, lịch sử, cài đặt
+  services/storage.js  # localStorage, schema/migrate, nhập/xuất JSON
+  stores/              # Pinia: cài đặt, lịch sử, session hiện tại
+  views/               # Bắt đầu, session, đáp xuống, hoàn tất, tập trung, lịch sử, cài đặt
+public/
+  manifest.webmanifest
+  icon.svg
+tests/
+  storage-migration.test.js
 Dockerfile
 docker-compose.yml
 nginx.conf
 ```
 
-## Thêm hoạt động mới
+## Thêm hoạt động
 
-1. Tạo component Vue trong `src/components/activities/`, ví dụ `QuietActivity.vue`. Component được render trong vùng `.activity-stage`; hoạt động có thể dùng toàn bộ vùng này. Giữ chuyển động chậm, hỗ trợ reduced-motion và thêm `aria-label` mô tả ngắn.
-2. Thêm mã hoạt động vào danh sách lựa chọn tại `src/views/HomeView.vue` và component tương ứng vào map `activities` trong `src/views/SessionView.vue`.
-3. Thêm mã hợp lệ trong `normalizeSettings` của `src/services/storage.js` để cấu hình có thể được lưu/nhập; thêm nhãn tương ứng ở `src/views/SettingsView.vue` và tên hiển thị trong lịch sử ở `src/views/HistoryView.vue`.
-4. Chạy `npm run build`, rồi kiểm tra cả phiên mới và dữ liệu nhập/xuất.
+1. Tạo component trong `src/components/activities/`; dùng vùng `.activity-stage`, giữ chuyển động chậm, thêm `aria-label` và đảm bảo hiển thị phù hợp với reduced-motion.
+2. Thêm mã và nhãn hoạt động ở `src/views/HomeView.vue`, map component trong `src/views/SessionView.vue`, và nhãn lịch sử trong `src/views/HistoryView.vue`.
+3. Cho phép mã hoạt động mới trong `normalizeSettings` tại `src/services/storage.js`.
+4. Chạy `npm test` và `npm run build`.
+
+## Chuẩn bị thêm ngôn ngữ
+
+Giao diện hiện dùng tiếng Việt làm ngôn ngữ mặc định (`lang="vi"` trong `index.html`). Khi bổ sung tiếng Anh, tạo dictionary `vi`/`en` trong `src/locales/`, thay chuỗi giao diện bằng key dịch, rồi thêm lựa chọn ngôn ngữ vào Settings. Có thể dùng `vue-i18n` ở giai đoạn đó; hiện chưa thêm thư viện dịch để giữ bundle gọn.

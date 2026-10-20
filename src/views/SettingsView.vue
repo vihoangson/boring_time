@@ -55,6 +55,10 @@ function update(key, value) {
           <span>Hiện đồng hồ trong phiên</span>
           <input :checked="settings.showTimer" type="checkbox" @change="update('showTimer', $event.target.checked)" />
         </label>
+        <label class="setting-row toggle-row">
+          <span>Hít thở nhẹ trước phiên <small>30 giây</small></span>
+          <input :checked="settings.openingBreath" aria-label="Bật hoặc tắt hít thở mở đầu" type="checkbox" @change="update('openingBreath', $event.target.checked)" />
+        </label>
         <label class="setting-row">
           <span>Giao diện</span>
           <select :value="settings.theme" aria-label="Chế độ sáng tối" @change="update('theme', $event.target.value)">

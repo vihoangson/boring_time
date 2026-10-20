@@ -23,7 +23,7 @@ const recentWeeks = computed(() => {
       const ended = new Date(item.endedAt)
       return ended >= date && ended < next
     })
-    const scores = day.flatMap((item) => [item.mood, item.focus].filter(Number.isFinite))
+    const scores = day.map((item) => item.focusAfter).filter(Number.isFinite)
     return {
       label: date.toLocaleDateString('vi-VN', { weekday: 'short' }),
       count: day.length,
@@ -96,8 +96,11 @@ function clearHistory() {
           <div>
             <time>{{ new Date(item.endedAt).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }) }}</time>
             <p>{{ item.duration }} phút · {{ activityNames[item.activity] || item.activity }} · {{ soundNames[item.sound] || item.sound }}</p>
+            <p v-if="item.emotionBefore || item.emotionAfter || item.focusAfter !== null">
+              {{ item.emotionBefore || '—' }} → {{ item.emotionAfter || '—' }} · tập trung {{ item.focusAfter ?? '—' }}/5
+            </p>
           </div>
-          <span class="session-score">{{ item.mood ?? '—' }} / {{ item.focus ?? '—' }}</span>
+          <span class="session-score">Rời đi {{ item.leaveCount ?? 0 }} lần</span>
         </li>
       </ul>
       <section class="data-actions">

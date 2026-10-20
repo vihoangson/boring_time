@@ -18,10 +18,12 @@ const router = useRouter()
 const { start: startAudio, stop: stopAudio, pause: pauseAudio, resume: resumeAudio } = useAudio()
 const pausedByVisibility = ref(false)
 const audioReady = ref(false)
-const escapeHeld = ref(false)
-const escapeProgress = ref(false)
 const finishing = ref(false)
-let escapeTimer
+const exitProgress = ref(0)
+let exitTimer
+let exitInterval
+let holdStartedAt = 0
+let lastDepartureAt = 0
 let completing = false
 const activities = { dot: DotActivity, count: CountActivity, lines: LinesActivity, paint: PaintActivity, typing: TypingActivity }
 const activityComponent = computed(() => activities[session.activity] || DotActivity)
@@ -37,7 +39,7 @@ async function finishSession() {
   finishing.value = true
   await stopAudio()
   session.finish()
-  router.replace('/finish')
+  router.replace('/landing')
 }
 
 useTimer(finishSession)
@@ -54,37 +56,69 @@ async function resume() {
   if (audioReady.value) await resumeAudio()
 }
 async function exitEarly() {
+  cancelExitHold()
   if (session.paused) session.resume()
   await finishSession()
 }
 
+function recordDeparture() {
+  const now = Date.now()
+  if (now - lastDepartureAt > 1200) session.recordLeave()
+  lastDepartureAt = now
+}
+
 function onVisibility() {
+  if (document.visibilityState === 'visible') {
+    departureRecorded = false
+    return
+  }
   if (document.visibilityState === 'hidden' && session.active && !session.paused) {
+    recordDeparture()
     pausedByVisibility.value = true
     pause()
   }
 }
+function beginExitHold(event) {
+  if (holdStartedAt || !session.active) return
+  if (event?.pointerId !== undefined) event.currentTarget.setPointerCapture?.(event.pointerId)
+  holdStartedAt = Date.now()
+  session.recordExitAttempt()
+  exitProgress.value = 0
+  exitInterval = window.setInterval(() => {
+    exitProgress.value = Math.min(100, ((Date.now() - holdStartedAt) / 3000) * 100)
+  }, 50)
+  exitTimer = window.setTimeout(exitEarly, 3000)
+}
+function cancelExitHold() {
+  if (!holdStartedAt) return
+  holdStartedAt = 0
+  exitProgress.value = 0
+  window.clearTimeout(exitTimer)
+  window.clearInterval(exitInterval)
+}
 function onKeyDown(event) {
-  if (event.key !== 'Escape' || escapeHeld.value) return
+  if (event.key !== 'Escape' || event.repeat) return
   event.preventDefault()
-  escapeHeld.value = true
-  escapeProgress.value = false
-  escapeTimer = window.setTimeout(() => {
-    escapeProgress.value = true
-    exitEarly()
-  }, 2000)
+  beginExitHold()
 }
 function onKeyUp(event) {
-  if (event.key !== 'Escape') return
-  escapeHeld.value = false
-  escapeProgress.value = false
-  window.clearTimeout(escapeTimer)
+  if (event.key === 'Escape') cancelExitHold()
+}
+function onWindowBlur() {
+  if (session.active && document.visibilityState === 'visible') recordDeparture()
+}
+function beforeUnload(event) {
+  if (!session.active) return
+  event.preventDefault()
+  event.returnValue = ''
 }
 
 onMounted(async () => {
   document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('blur', onWindowBlur)
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
+  window.addEventListener('beforeunload', beforeUnload)
   try {
     await startAudio(session.sound, session.volume)
     audioReady.value = session.sound !== 'silence'
@@ -94,18 +128,39 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibility)
+  window.removeEventListener('blur', onWindowBlur)
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('keyup', onKeyUp)
-  window.clearTimeout(escapeTimer)
+  window.removeEventListener('beforeunload', beforeUnload)
+  window.clearTimeout(exitTimer)
+  window.clearInterval(exitInterval)
 })
 </script>
 
 <template>
-  <main class="session-view" :class="[`activity-${session.activity}`, { 'is-finishing': finishing }]">
-    <component :is="activityComponent" />
+  <main class="session-view" :class="[`activity-${session.activity}`, { 'is-finishing': finishing, 'breathing-view': session.phase === 'breathing' }]">
+    <div v-if="session.phase === 'breathing'" class="activity-stage breathing-stage" aria-label="Hít thở chậm trong 30 giây">
+      <span class="breathing-orb" />
+    </div>
+    <component :is="activityComponent" v-else />
     <time v-if="settings.showTimer" class="session-timer" aria-live="off">{{ formattedTime }}</time>
-    <button class="exit-button" type="button" aria-label="Kết thúc phiên" @click="exitEarly">Thoát</button>
-    <div v-if="escapeProgress" class="exit-hint" role="status">Đang kết thúc phiên…</div>
+    <button
+      class="exit-button"
+      type="button"
+      aria-label="Giữ nút 3 giây để kết thúc phiên"
+      title="Giữ 3 giây để kết thúc"
+      @pointerdown="beginExitHold"
+      @pointerup="cancelExitHold"
+      @pointercancel="cancelExitHold"
+      @keydown.space.prevent="beginExitHold"
+      @keyup.space.prevent="cancelExitHold"
+      @blur="cancelExitHold"
+    >
+      <span class="exit-progress" :style="{ '--hold-progress': `${exitProgress}%` }" aria-hidden="true" />
+      <span>Thoát</span>
+    </button>
+    <p v-if="session.phase === 'breathing'" class="session-footnote">Hãy hít thở thật tự nhiên</p>
+    <p v-else class="session-footnote">Giữ Esc hoặc nút Thoát trong 3 giây để kết thúc</p>
     <section v-if="session.paused" class="pause-message" role="status">
       <p>{{ pausedByVisibility ? 'Phiên đã tạm dừng khi bạn rời khỏi trang.' : 'Phiên đang tạm dừng.' }}</p>
       <button class="quiet-button" type="button" @click="resume">Tiếp tục khi bạn sẵn sàng</button>

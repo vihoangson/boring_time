@@ -6,7 +6,7 @@ import './style.css'
 
 createApp(App).use(createPinia()).use(router).mount('#app')
 
-if ('serviceWorker' in navigator) {
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js').catch((error) => {
       console.warn('Không thể bật chế độ dùng ngoại tuyến.', error)

@@ -7,7 +7,9 @@ export function useTimer(onComplete) {
 
   const tick = () => {
     session.updateRemaining()
-    if (session.remainingMs <= 0 && session.active && !session.paused) onComplete()
+    if (session.remainingMs > 0 || !session.active || session.paused) return
+    if (session.phase === 'breathing') session.beginActivity()
+    else onComplete()
   }
 
   onMounted(() => {

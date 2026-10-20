@@ -1,9 +1,11 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '../components/ui/AppHeader.vue'
 import { useSettingsStore } from '../stores/settings'
 import { useSessionStore } from '../stores/session'
+import EmotionPicker from '../components/ui/EmotionPicker.vue'
+import ScalePicker from '../components/ui/ScalePicker.vue'
 
 const settings = useSettingsStore()
 const session = useSessionStore()
@@ -23,9 +25,16 @@ const sounds = [
   { id: 'tick', name: 'Tích tắc chậm' },
   { id: 'silence', name: 'Im lặng' },
 ]
+const nextTask = ref('')
+const emotionBefore = ref(null)
+const focusBefore = ref(null)
 const volumeLabel = computed(() => `${Math.round(settings.volume * 100)}%`)
 function start() {
-  session.start(settings.$state)
+  session.start(settings.$state, {
+    nextTask: nextTask.value.trim(),
+    emotionBefore: emotionBefore.value,
+    focusBefore: focusBefore.value,
+  })
   router.push('/session')
 }
 </script>
@@ -37,6 +46,19 @@ function start() {
       <p class="eyebrow">Một khoảng lặng có chủ đích</p>
       <h1>Không cần làm gì cả.</h1>
       <p class="intro-copy">Hãy để tâm trí nghỉ ngơi một chút trước khi tiếp tục.</p>
+
+      <div class="setup-section next-task-section">
+        <label class="field-label" for="next-task">Việc tiếp theo bạn định làm? <span>Không bắt buộc</span></label>
+        <input id="next-task" v-model="nextTask" class="text-input" type="text" maxlength="120" autocomplete="off" />
+      </div>
+
+      <details class="optional-check-in">
+        <summary>Ghi nhận cảm xúc trước phiên <span>(có thể bỏ qua)</span></summary>
+        <div class="pre-session-reflection">
+          <EmotionPicker v-model="emotionBefore" label="Bạn đang cảm thấy thế nào?" />
+          <ScalePicker v-model="focusBefore" label="Mức tập trung hiện tại" name="focus-before" />
+        </div>
+      </details>
 
       <div class="setup-section">
         <h2>Thời lượng</h2>

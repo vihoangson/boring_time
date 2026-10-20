@@ -1,5 +1,31 @@
 import { onUnmounted } from 'vue'
 
+export async function playGentleBell() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext
+  if (!AudioContextClass) return
+
+  const context = new AudioContextClass()
+  try {
+    await context.resume()
+    const oscillator = context.createOscillator()
+    const envelope = context.createGain()
+    const startAt = context.currentTime
+    oscillator.type = 'sine'
+    oscillator.frequency.value = 523.25
+    envelope.gain.setValueAtTime(0.0001, startAt)
+    envelope.gain.linearRampToValueAtTime(0.018, startAt + 0.18)
+    envelope.gain.exponentialRampToValueAtTime(0.0001, startAt + 1.25)
+    oscillator.connect(envelope)
+    envelope.connect(context.destination)
+    oscillator.start(startAt)
+    oscillator.stop(startAt + 1.3)
+    window.setTimeout(() => context.close(), 1500)
+  } catch (error) {
+    await context.close()
+    throw error
+  }
+}
+
 export function useAudio() {
   let context
   let master

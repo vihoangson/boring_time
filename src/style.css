@@ -117,13 +117,35 @@ input[type='range'] { accent-color: var(--accent); }
 .scale-option.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
 .scale-hints { display: flex; justify-content: space-between; margin-top: 7px; color: var(--muted); font-size: 10px; }
 .finish-actions { display: flex; justify-content: center; align-items: center; gap: 24px; }
+.field-label, .journal-field { display: block; color: var(--text); font-size: 13px; }
+.field-label span, .journal-field span, .optional-check-in summary span { color: var(--muted); font-size: 11px; }
+.text-input, .journal-field textarea { width: 100%; margin-top: 9px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
+.text-input { min-height: 43px; }
+.optional-check-in { margin-top: 25px; border-bottom: 1px solid var(--line); }
+.optional-check-in summary { padding: 12px 0; color: var(--muted); cursor: pointer; font-size: 12px; }
+.pre-session-reflection { display: grid; gap: 22px; padding: 12px 0 20px; }
+.emotion-field { min-width: 0; padding: 0; border: 0; }
+.emotion-field legend { margin-bottom: 11px; font-size: 13px; }
+.emotion-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.emotion-option { min-height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 20px; background: transparent; color: var(--muted); font-size: 11px; }
+.emotion-option.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.next-task-reminder { width: fit-content; max-width: 100%; margin: 22px auto 8px; padding: 9px 14px; border-radius: 7px; background: var(--surface); color: var(--text); font-size: 14px; overflow-wrap: anywhere; }
+.before-session-summary { margin: 22px 0 0; color: var(--muted); font-size: 11px; }
+.leave-summary { margin: 23px 0 0; color: var(--muted); font-size: 12px; }
+.journal-field { margin: 0 auto 24px; text-align: left; }
+.journal-field textarea { display: block; resize: vertical; line-height: 1.5; }
+.focus-start-button { margin-top: 27px; padding: 9px 0; border: 0; background: transparent; color: var(--muted); font-size: 12px; }
+.focus-start-button:hover, .landing-skip:hover { color: var(--text); }
 
 .session-view { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden; background: var(--bg); opacity: 1; transition: opacity 1.5s ease; }
 .session-view.is-finishing { opacity: 0; }
 .activity-stage { position: absolute; inset: 0; width: 100%; height: 100%; }
 .session-timer { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); color: var(--text); opacity: .16; font-size: 13px; font-variant-numeric: tabular-nums; }
-.exit-button { position: absolute; top: 25px; right: 27px; border: 0; background: transparent; color: var(--text); opacity: .25; font-size: 12px; }
+.exit-button { position: absolute; top: 18px; right: 19px; width: 54px; height: 54px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text); opacity: .4; font-size: 11px; }
 .exit-button:hover { opacity: .7; }
+.exit-progress { position: absolute; inset: 4px; border: 1px solid var(--line); border-radius: 50%; background: conic-gradient(var(--accent) var(--hold-progress), transparent 0); opacity: .48; }
+.exit-progress::after { position: absolute; inset: 3px; border-radius: inherit; background: var(--bg); content: ''; }
+.exit-button > span:last-child { z-index: 1; }
 .session-footnote { position: absolute; bottom: 24px; margin: 0; color: var(--text); opacity: .17; font-size: 11px; }
 .exit-hint { position: absolute; top: 60px; right: 24px; color: var(--muted); font-size: 12px; }
 .pause-message { z-index: 2; padding: 24px 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: center; box-shadow: 0 8px 28px #0000000a; }
@@ -145,6 +167,17 @@ input[type='range'] { accent-color: var(--accent); }
 .typing-stage { display: grid; place-items: center; border: 0; background: transparent; }
 .typing-stage span { width: 6px; height: 6px; border-radius: 50%; background: var(--text); opacity: .18; }
 .activity-paint .session-timer, .activity-paint .exit-button, .activity-paint .session-footnote { color: #555750; }
+.breathing-stage, .landing-view { display: grid; place-items: center; background: var(--bg); }
+.breathing-orb, .landing-orb { width: min(34vw, 150px); aspect-ratio: 1; border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--accent-soft) 58%, transparent); animation: breathe 12s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(.82); opacity: .55; } 50% { transform: scale(1.12); opacity: .9; } }
+.landing-view { position: fixed; inset: 0; overflow: hidden; }
+.landing-orb { width: min(42vw, 190px); animation-duration: 18s; }
+.landing-skip { position: absolute; top: 25px; right: 27px; padding: 12px; border: 0; background: transparent; color: var(--text); opacity: .24; font-size: 12px; }
+.pomodoro-view { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px; background: var(--bg); text-align: center; }
+.pomodoro-time { margin: 22px 0 10px; color: var(--text); opacity: .65; font-size: clamp(54px, 15vw, 88px); font-variant-numeric: tabular-nums; font-weight: 300; letter-spacing: -.06em; }
+.pomodoro-done { margin-top: 18px; color: var(--muted); font-size: 13px; }
+.update-toast { position: fixed; z-index: 10; top: 12px; left: 50%; display: flex; align-items: center; gap: 10px; transform: translateX(-50%); padding: 9px 13px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--muted); font-size: 12px; box-shadow: 0 4px 14px #0000000c; }
+.update-toast button { padding: 3px; border: 0; background: transparent; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 600px) {
   .topbar { height: 66px; padding: 0 18px; gap: 12px; }
@@ -168,6 +201,9 @@ input[type='range'] { accent-color: var(--accent); }
   .setting-row select { width: 46%; padding: 0 7px; font-size: 11px; }
   .reflection { gap: 16px; }
   .scale-option { width: 32px; height: 32px; }
+  .emotion-option { padding: 0 9px; font-size: 10px; }
+  .exit-button { top: 12px; right: 11px; }
+  .update-toast { width: max-content; max-width: calc(100vw - 24px); }
   .finish-content { padding: 70px 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
